@@ -23,14 +23,17 @@ type CheckoutIntentPayload = {
 
 function PaymentElementForm({
   courseSlug,
+  clientSecret,
 }: {
   courseSlug: string;
+  clientSecret: string;
 }) {
   const router = useRouter();
   const stripe = useStripe();
   const elements = useElements();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,6 +45,7 @@ function PaymentElementForm({
 
     setIsSubmitting(true);
     setErrorMessage(null);
+    setStatusMessage("Validando formulario...");
 
     const { error: submitError } = await elements.submit();
 
@@ -53,8 +57,11 @@ function PaymentElementForm({
       return;
     }
 
+    setStatusMessage("Confirmando pago con Stripe...");
+
     const result = await stripe.confirmPayment({
       elements,
+      clientSecret,
       redirect: "if_required",
       confirmParams: {
         return_url: `${window.location.origin}/courses/${courseSlug}?checkout=success`,
@@ -70,10 +77,12 @@ function PaymentElementForm({
     const status = result.paymentIntent?.status;
 
     if (status === "succeeded" || status === "processing") {
+      setStatusMessage("Pago confirmado. Redirigiendo...");
       router.push(`/courses/${courseSlug}?checkout=success`);
       return;
     }
 
+    setStatusMessage(null);
     setErrorMessage("El pago no pudo completarse. Intenta de nuevo.");
     setIsSubmitting(false);
   }
@@ -103,6 +112,12 @@ function PaymentElementForm({
       {errorMessage ? (
         <div className="border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {errorMessage}
+        </div>
+      ) : null}
+
+      {statusMessage ? (
+        <div className="border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">
+          {statusMessage}
         </div>
       ) : null}
 
@@ -245,7 +260,7 @@ export function StripeElementsCheckout({
         appearance,
       }}
     >
-      <PaymentElementForm courseSlug={courseSlug} />
+      <PaymentElementForm courseSlug={courseSlug} clientSecret={clientSecret} />
     </Elements>
   );
 }

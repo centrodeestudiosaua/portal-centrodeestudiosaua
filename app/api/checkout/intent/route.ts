@@ -112,7 +112,7 @@ export async function POST(request: Request) {
       const paymentIntent = await stripe.paymentIntents.create({
         amount: price.unit_amount,
         currency: price.currency,
-        automatic_payment_methods: { enabled: true },
+        payment_method_types: ["card"],
         receipt_email: user.email,
         metadata: {
           user_id: user.id,
@@ -134,6 +134,7 @@ export async function POST(request: Request) {
       payment_behavior: "default_incomplete",
       payment_settings: {
         save_default_payment_method: "on_subscription",
+        payment_method_types: ["card"],
       },
       billing_mode: {
         type: "flexible",
