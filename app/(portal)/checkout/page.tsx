@@ -33,10 +33,7 @@ export default async function CheckoutPage({
         </section>
       ) : null}
 
-      <CheckoutPageContent
-        course={course}
-        returnPath={`/checkout?course_slug=${course.slug}&checkout=cancelled`}
-      />
+      <CheckoutPageContent course={course} />
     </div>
   );
 }

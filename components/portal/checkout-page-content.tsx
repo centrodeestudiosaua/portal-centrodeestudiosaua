@@ -4,8 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { CreditCard, LockKeyhole, ShieldCheck } from "lucide-react";
 
-import { createCheckoutSession } from "@/app/(portal)/actions";
-import { Button } from "@/components/ui/button";
+import { EmbeddedPortalCheckout } from "@/components/portal/embedded-checkout";
 import type { CourseDetail, PurchaseOption } from "@/lib/portal/data";
 
 function formatCurrency(value: number | null) {
@@ -50,13 +49,7 @@ function getPlanPresentation(course: CourseDetail, option: PurchaseOption) {
   };
 }
 
-export function CheckoutPageContent({
-  course,
-  returnPath,
-}: {
-  course: CourseDetail;
-  returnPath: string;
-}) {
+export function CheckoutPageContent({ course }: { course: CourseDetail }) {
   const defaultOption = course.purchaseOptions.find(
     (option) => option.code === "monthly",
   );
@@ -217,28 +210,13 @@ export function CheckoutPageContent({
               </div>
             </div>
 
-            <form action={createCheckoutSession}>
-              <input type="hidden" name="course_id" value={course.id} />
-              <input type="hidden" name="course_slug" value={course.slug} />
-              <input type="hidden" name="price_id" value={selectedOption.priceId} />
-              <input type="hidden" name="mode" value={selectedOption.mode} />
-              <input
-                type="hidden"
-                name="purchase_option"
-                value={selectedOption.code}
+            <div className="mt-2 rounded-none border border-border bg-white p-4">
+              <EmbeddedPortalCheckout
+                courseId={course.id}
+                courseSlug={course.slug}
+                option={selectedOption}
               />
-              <input type="hidden" name="success_path" value={`/courses/${course.slug}?checkout=success`} />
-              <input type="hidden" name="cancel_path" value={returnPath} />
-
-              <Button
-                type="submit"
-                className="mt-2 w-full rounded-none bg-accent px-6 py-3 text-xs font-bold uppercase tracking-[0.2em] text-primary hover:bg-accent/90"
-              >
-                {selectedOption.mode === "subscription"
-                  ? `Suscribirme - ${selectedPresentation.amount}${selectedPresentation.suffix}`
-                  : `Pagar ${selectedPresentation.amount}`}
-              </Button>
-            </form>
+            </div>
           </div>
         </section>
       </div>
