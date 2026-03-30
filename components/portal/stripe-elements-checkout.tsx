@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  CardCvcElement,
+  CardExpiryElement,
+  CardNumberElement,
   Elements,
-  PaymentElement,
   useElements,
   useStripe,
 } from "@stripe/react-stripe-js";
@@ -35,6 +37,24 @@ function PaymentElementForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
+  const elementBaseClass =
+    "rounded-none border border-border bg-white px-4 py-3 text-base text-primary";
+  const elementOptions = {
+    style: {
+      base: {
+        color: "#1a1a35",
+        fontSize: "18px",
+        fontFamily: "Inter, sans-serif",
+        "::placeholder": {
+          color: "#98a2b3",
+        },
+      },
+      invalid: {
+        color: "#911a26",
+      },
+    },
+  } as const;
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -45,26 +65,20 @@ function PaymentElementForm({
 
     setIsSubmitting(true);
     setErrorMessage(null);
-    setStatusMessage("Validando formulario...");
+    setStatusMessage("Confirmando pago con Stripe...");
 
-    const { error: submitError } = await elements.submit();
+    const cardElement = elements.getElement(CardNumberElement);
 
-    if (submitError) {
-      setErrorMessage(
-        submitError.message ?? "No se pudo preparar el formulario de pago.",
-      );
+    if (!cardElement) {
+      setErrorMessage("No se pudo encontrar el campo de tarjeta.");
+      setStatusMessage(null);
       setIsSubmitting(false);
       return;
     }
 
-    setStatusMessage("Confirmando pago con Stripe...");
-
-    const result = await stripe.confirmPayment({
-      elements,
-      clientSecret,
-      redirect: "if_required",
-      confirmParams: {
-        return_url: `${window.location.origin}/courses/${courseSlug}?checkout=success`,
+    const result = await stripe.confirmCardPayment(clientSecret, {
+      payment_method: {
+        card: cardElement,
       },
     });
 
@@ -117,25 +131,28 @@ function PaymentElementForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <PaymentElement
-        options={{
-          layout: "tabs",
-          fields: {
-            billingDetails: {
-              name: "auto",
-              email: "auto",
-              address: {
-                country: "auto",
-                postalCode: "auto",
-                city: "never",
-                line1: "never",
-                line2: "never",
-                state: "never",
-              },
-            },
-          },
-        }}
-      />
+      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px_160px]">
+        <label className="space-y-2">
+          <span className="text-sm font-semibold text-primary">Card number</span>
+          <div className={elementBaseClass}>
+            <CardNumberElement options={elementOptions} />
+          </div>
+        </label>
+        <label className="space-y-2">
+          <span className="text-sm font-semibold text-primary">
+            Expiration (MM/YY)
+          </span>
+          <div className={elementBaseClass}>
+            <CardExpiryElement options={elementOptions} />
+          </div>
+        </label>
+        <label className="space-y-2">
+          <span className="text-sm font-semibold text-primary">Security code</span>
+          <div className={elementBaseClass}>
+            <CardCvcElement options={elementOptions} />
+          </div>
+        </label>
+      </div>
 
       {errorMessage ? (
         <div className="border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -151,7 +168,7 @@ function PaymentElementForm({
 
       <button
         type="submit"
-        disabled={!stripe || !elements || isSubmitting}
+        disabled={!stripe || isSubmitting}
         className="w-full bg-accent px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-primary transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? "Procesando..." : "Confirmar pago"}
@@ -186,10 +203,6 @@ export function StripeElementsCheckout({
         ".Input": {
           border: "1px solid #d9dde5",
           boxShadow: "none",
-        },
-        ".Label": {
-          color: "#1a1a35",
-          fontWeight: "600",
         },
       },
     }),
