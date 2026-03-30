@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Elements,
   PaymentElement,
@@ -25,6 +26,7 @@ function PaymentElementForm({
 }: {
   courseSlug: string;
 }) {
+  const router = useRouter();
   const stripe = useStripe();
   const elements = useElements();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -41,8 +43,19 @@ function PaymentElementForm({
     setIsSubmitting(true);
     setErrorMessage(null);
 
+    const { error: submitError } = await elements.submit();
+
+    if (submitError) {
+      setErrorMessage(
+        submitError.message ?? "No se pudo preparar el formulario de pago.",
+      );
+      setIsSubmitting(false);
+      return;
+    }
+
     const result = await stripe.confirmPayment({
       elements,
+      redirect: "if_required",
       confirmParams: {
         return_url: `${window.location.origin}/courses/${courseSlug}?checkout=success`,
       },
@@ -53,6 +66,16 @@ function PaymentElementForm({
       setIsSubmitting(false);
       return;
     }
+
+    const status = result.paymentIntent?.status;
+
+    if (status === "succeeded" || status === "processing") {
+      router.push(`/courses/${courseSlug}?checkout=success`);
+      return;
+    }
+
+    setErrorMessage("El pago no pudo completarse. Intenta de nuevo.");
+    setIsSubmitting(false);
   }
 
   return (
