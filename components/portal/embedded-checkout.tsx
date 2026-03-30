@@ -55,7 +55,8 @@ export function EmbeddedPortalCheckout({
           }),
         });
 
-        const payload = (await response.json()) as {
+        const rawBody = await response.text();
+        const payload = (rawBody ? JSON.parse(rawBody) : {}) as {
           clientSecret?: string;
           error?: string;
         };
