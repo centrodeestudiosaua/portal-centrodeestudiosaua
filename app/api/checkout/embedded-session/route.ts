@@ -91,7 +91,7 @@ export async function POST(request: Request) {
         : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
     const sessionParams = {
-      ui_mode: "embedded",
+      ui_mode: "embedded_page",
       mode,
       customer_email: user.email,
       line_items: [{ price: priceId, quantity: 1 }],
