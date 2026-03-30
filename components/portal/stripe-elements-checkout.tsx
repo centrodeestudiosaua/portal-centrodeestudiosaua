@@ -33,6 +33,8 @@ function PaymentElementForm({
   const router = useRouter();
   const stripe = useStripe();
   const elements = useElements();
+  const [cardholderName, setCardholderName] = useState("");
+  const [country, setCountry] = useState("MX");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -63,6 +65,11 @@ function PaymentElementForm({
       return;
     }
 
+    if (!cardholderName.trim()) {
+      setErrorMessage("Ingresa el nombre del titular de la tarjeta.");
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMessage(null);
     setStatusMessage("Confirmando pago con Stripe...");
@@ -79,6 +86,12 @@ function PaymentElementForm({
     const result = await stripe.confirmCardPayment(clientSecret, {
       payment_method: {
         card: cardElement,
+        billing_details: {
+          name: cardholderName.trim(),
+          address: {
+            country,
+          },
+        },
       },
     });
 
@@ -131,23 +144,54 @@ function PaymentElementForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
+        <label className="space-y-2">
+          <span className="text-sm font-semibold text-primary">
+            Nombre del titular
+          </span>
+          <input
+            value={cardholderName}
+            onChange={(event) => setCardholderName(event.target.value)}
+            placeholder="Nombre como aparece en la tarjeta"
+            className="w-full rounded-none border border-border bg-white px-4 py-3 text-base text-primary outline-none transition-colors focus:border-accent"
+            autoComplete="cc-name"
+          />
+        </label>
+        <label className="space-y-2">
+          <span className="text-sm font-semibold text-primary">Pais</span>
+          <select
+            value={country}
+            onChange={(event) => setCountry(event.target.value)}
+            className="w-full rounded-none border border-border bg-white px-4 py-3 text-base text-primary outline-none transition-colors focus:border-accent"
+            autoComplete="country"
+          >
+            <option value="MX">Mexico</option>
+            <option value="US">Estados Unidos</option>
+          </select>
+        </label>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px_160px]">
         <label className="space-y-2">
-          <span className="text-sm font-semibold text-primary">Card number</span>
+          <span className="text-sm font-semibold text-primary">
+            Numero de tarjeta
+          </span>
           <div className={elementBaseClass}>
             <CardNumberElement options={elementOptions} />
           </div>
         </label>
         <label className="space-y-2">
           <span className="text-sm font-semibold text-primary">
-            Expiration (MM/YY)
+            Fecha de expiracion
           </span>
           <div className={elementBaseClass}>
             <CardExpiryElement options={elementOptions} />
           </div>
         </label>
         <label className="space-y-2">
-          <span className="text-sm font-semibold text-primary">Security code</span>
+          <span className="text-sm font-semibold text-primary">
+            Codigo de seguridad
+          </span>
           <div className={elementBaseClass}>
             <CardCvcElement options={elementOptions} />
           </div>
@@ -168,7 +212,7 @@ function PaymentElementForm({
 
       <button
         type="submit"
-        disabled={!stripe || isSubmitting}
+        disabled={!stripe || isSubmitting || !cardholderName.trim()}
         className="w-full bg-accent px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-primary transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? "Procesando..." : "Confirmar pago"}
