@@ -44,6 +44,7 @@ export async function POST(request: Request) {
     stripeCheckoutSessionId?: string | null;
     stripeCustomerId?: string | null;
     paid?: boolean;
+    accessExpiresAt?: string | null;
   }) {
     const {
       userId,
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
       stripeCheckoutSessionId,
       stripeCustomerId,
       paid,
+      accessExpiresAt,
     } = input;
 
     if (stripePaymentIntentId) {
@@ -87,6 +89,7 @@ export async function POST(request: Request) {
         course_id: courseId,
         status: "active",
         enrolled_at: new Date().toISOString(),
+        access_expires_at: accessExpiresAt,
       },
       { onConflict: "student_id,course_id" },
     );
@@ -144,6 +147,11 @@ export async function POST(request: Request) {
       const courseId = subscription.metadata?.course_id;
 
       if (userId && courseId) {
+        const monthsTotal = Number(subscription.metadata?.months_total ?? "1");
+        const accessExpiresAt = Number.isFinite(monthsTotal)
+          ? new Date(Date.now() + monthsTotal * 30 * 24 * 60 * 60 * 1000).toISOString()
+          : null;
+
         await unlockCourse({
           userId,
           courseId,
@@ -153,6 +161,7 @@ export async function POST(request: Request) {
           stripeCustomerId:
             typeof subscription.customer === "string" ? subscription.customer : null,
           paid: true,
+          accessExpiresAt,
         });
       }
     }

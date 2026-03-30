@@ -77,6 +77,34 @@ function PaymentElementForm({
     const status = result.paymentIntent?.status;
 
     if (status === "succeeded" || status === "processing") {
+      setStatusMessage("Activando acceso...");
+
+      const confirmResponse = await fetch("/api/checkout/confirm", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          paymentIntentId: result.paymentIntent?.id,
+          courseSlug,
+        }),
+      });
+
+      const confirmRaw = await confirmResponse.text();
+      const confirmPayload = (confirmRaw ? JSON.parse(confirmRaw) : {}) as {
+        ok?: boolean;
+        error?: string;
+      };
+
+      if (!confirmResponse.ok || !confirmPayload.ok) {
+        setStatusMessage(null);
+        setErrorMessage(
+          confirmPayload.error ?? "El pago se hizo, pero no se pudo activar tu acceso.",
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
       setStatusMessage("Pago confirmado. Redirigiendo...");
       router.push(`/courses/${courseSlug}?checkout=success`);
       return;

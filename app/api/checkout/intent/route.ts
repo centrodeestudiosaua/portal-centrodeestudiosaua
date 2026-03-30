@@ -37,6 +37,8 @@ export async function POST(request: Request) {
     const priceId = body.priceId?.trim();
     const mode = body.mode === "subscription" ? "subscription" : "payment";
     const purchaseOption = body.purchaseOption?.trim() || "one_time";
+    const monthsTotal =
+      purchaseOption === "three_month" ? 3 : purchaseOption === "monthly" ? 6 : 1;
 
     if (!courseId || !courseSlug || !priceId) {
       return NextResponse.json(
@@ -121,6 +123,7 @@ export async function POST(request: Request) {
           course_slug: courseSlug,
           purchase_option: purchaseOption,
           price_id: priceId,
+          payment_type: "one_time",
         },
       });
 
@@ -128,17 +131,22 @@ export async function POST(request: Request) {
     }
 
     const customerId = await findOrCreateCustomer(stripe, user.email, user.id);
-    const subscription = await stripe.subscriptions.create({
+    const price = await stripe.prices.retrieve(priceId);
+
+    if (!price.unit_amount || !price.currency) {
+      return NextResponse.json(
+        { error: "Stripe price is missing amount or currency" },
+        { status: 400 },
+      );
+    }
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: price.unit_amount,
+      currency: price.currency,
       customer: customerId,
-      items: [{ price: priceId }],
-      payment_behavior: "default_incomplete",
-      payment_settings: {
-        save_default_payment_method: "on_subscription",
-        payment_method_types: ["card"],
-      },
-      billing_mode: {
-        type: "flexible",
-      },
+      payment_method_types: ["card"],
+      setup_future_usage: "off_session",
+      receipt_email: user.email,
       metadata: {
         user_id: user.id,
         user_email: user.email,
@@ -146,16 +154,17 @@ export async function POST(request: Request) {
         course_slug: courseSlug,
         purchase_option: purchaseOption,
         price_id: priceId,
+        payment_type: "installments",
+        plan: purchaseOption,
+        months_total: String(monthsTotal),
       },
-      expand: ["latest_invoice.confirmation_secret"],
     });
 
-    const latestInvoice = subscription.latest_invoice as Stripe.Invoice | null;
-    const clientSecret = latestInvoice?.confirmation_secret?.client_secret;
+    const clientSecret = paymentIntent.client_secret;
 
     if (!clientSecret) {
       return NextResponse.json(
-        { error: "Subscription confirmation secret was not created" },
+        { error: "Payment intent client secret was not created" },
         { status: 500 },
       );
     }
