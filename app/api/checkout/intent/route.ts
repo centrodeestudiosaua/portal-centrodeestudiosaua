@@ -135,6 +135,9 @@ export async function POST(request: Request) {
       payment_settings: {
         save_default_payment_method: "on_subscription",
       },
+      billing_mode: {
+        type: "flexible",
+      },
       metadata: {
         user_id: user.id,
         user_email: user.email,
@@ -143,7 +146,7 @@ export async function POST(request: Request) {
         purchase_option: purchaseOption,
         price_id: priceId,
       },
-      expand: ["latest_invoice.payment_intent"],
+      expand: ["latest_invoice.confirmation_secret"],
     });
 
     const latestInvoice = subscription.latest_invoice as Stripe.Invoice | null;
