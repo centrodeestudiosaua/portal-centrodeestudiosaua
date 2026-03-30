@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { CreditCard, LockKeyhole, ShieldCheck } from "lucide-react";
 
-import { EmbeddedPortalCheckout } from "@/components/portal/embedded-checkout";
+import { StripeElementsCheckout } from "@/components/portal/stripe-elements-checkout";
 import type { CourseDetail, PurchaseOption } from "@/lib/portal/data";
 
 function formatCurrency(value: number | null) {
@@ -203,15 +203,15 @@ export function CheckoutPageContent({ course }: { course: CourseDetail }) {
               <div className="mt-4 flex items-start gap-3 text-sm text-muted-foreground">
                 <LockKeyhole className="mt-0.5 h-4 w-4 text-emerald-600" />
                 <p className="leading-7">
-                  El pago se procesa en una terminal segura de Stripe. Al
-                  confirmar, el sistema abrira la pasarela protegida para
-                  capturar tu tarjeta y activar tu acceso automaticamente.
+                  El pago se procesa en una terminal segura de Stripe dentro
+                  del portal. Al confirmar, se activara tu acceso
+                  automaticamente.
                 </p>
               </div>
             </div>
 
             <div className="mt-2 rounded-none border border-border bg-white p-4">
-              <EmbeddedPortalCheckout
+              <StripeElementsCheckout
                 courseId={course.id}
                 courseSlug={course.slug}
                 option={selectedOption}
