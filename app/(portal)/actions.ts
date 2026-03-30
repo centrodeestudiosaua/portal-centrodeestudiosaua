@@ -95,6 +95,12 @@ export async function createCheckoutSession(formData: FormData) {
   const priceId = String(formData.get("price_id") || "");
   const mode = String(formData.get("mode") || "payment");
   const purchaseOption = String(formData.get("purchase_option") || "one_time");
+  const successPath =
+    String(formData.get("success_path") || "").trim() ||
+    `/courses/${courseSlug}?checkout=success`;
+  const cancelPath =
+    String(formData.get("cancel_path") || "").trim() ||
+    `/courses/${courseSlug}?checkout=cancelled`;
 
   if (!courseId || !courseSlug || !priceId) {
     redirect("/courses");
@@ -122,8 +128,8 @@ export async function createCheckoutSession(formData: FormData) {
     mode: mode === "subscription" ? "subscription" : "payment",
     customer_email: user.email,
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${origin}/courses/${courseSlug}?checkout=success`,
-    cancel_url: `${origin}/courses/${courseSlug}?checkout=cancelled`,
+    success_url: `${origin}${successPath}`,
+    cancel_url: `${origin}${cancelPath}`,
     metadata: {
       user_id: user.id,
       user_email: user.email,

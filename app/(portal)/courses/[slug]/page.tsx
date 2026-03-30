@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 
-import { createCheckoutSession } from "@/app/(portal)/actions";
 import { Button } from "@/components/ui/button";
 import { getCourseDetail } from "@/lib/portal/data";
 
@@ -80,21 +79,14 @@ export default async function CourseDetailPage({
                   </Link>
                 </Button>
               ) : (
-                course.purchaseOptions.map((option) => (
-                  <form key={option.code} action={createCheckoutSession}>
-                    <input type="hidden" name="course_id" value={course.id} />
-                    <input type="hidden" name="course_slug" value={course.slug} />
-                    <input type="hidden" name="price_id" value={option.priceId} />
-                    <input type="hidden" name="mode" value={option.mode} />
-                    <input type="hidden" name="purchase_option" value={option.code} />
-                    <Button
-                      type="submit"
-                      className="rounded-none bg-primary px-6 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white hover:bg-secondary"
-                    >
-                      {option.label}
-                    </Button>
-                  </form>
-                ))
+                <Button
+                  asChild
+                  className="rounded-none bg-primary px-6 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white hover:bg-secondary"
+                >
+                  <Link href={`/checkout?course_slug=${course.slug}`}>
+                    Ir al checkout
+                  </Link>
+                </Button>
               )}
             </div>
 
