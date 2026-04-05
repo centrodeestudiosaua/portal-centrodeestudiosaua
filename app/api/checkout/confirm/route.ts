@@ -155,11 +155,13 @@ export async function POST(request: Request) {
         { onConflict: "id" },
       );
 
+      const courseRedirectPath = `/courses/${courseSlug}?checkout=success`;
+
       const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
         type: "magiclink",
         email: resolvedUserEmail,
         options: {
-          redirectTo: `${origin}/dashboard`,
+          redirectTo: `${origin}${courseRedirectPath}`,
         },
       });
 
@@ -181,7 +183,7 @@ export async function POST(request: Request) {
 
       magicLink = `${origin}/auth/confirm?token_hash=${encodeURIComponent(
         hashedToken,
-      )}&type=magiclink&next=${encodeURIComponent("/dashboard")}`;
+      )}&type=magiclink&next=${encodeURIComponent(courseRedirectPath)}`;
     }
 
     const { data: existingPayment } = await admin
