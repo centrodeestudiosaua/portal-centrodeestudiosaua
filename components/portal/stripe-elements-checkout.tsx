@@ -28,6 +28,8 @@ function PaymentElementForm({
   clientSecret,
   isAnonymous,
   anonymousCustomer,
+  chargeSummary,
+  submitLabel,
 }: {
   courseSlug: string;
   clientSecret: string;
@@ -37,6 +39,8 @@ function PaymentElementForm({
     email: string;
     phone: string;
   };
+  chargeSummary?: string;
+  submitLabel?: string;
 }) {
   const router = useRouter();
   const stripe = useStripe();
@@ -48,7 +52,7 @@ function PaymentElementForm({
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const elementBaseClass =
-    "rounded-none border border-border bg-white px-4 py-3 text-base text-primary";
+    "min-h-[52px] rounded-[14px] border border-border bg-white px-4 py-4 text-base text-primary";
   const elementOptions = {
     style: {
       base: {
@@ -158,68 +162,89 @@ function PaymentElementForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
-        <label className="space-y-2">
-          <span className="text-sm font-semibold text-primary">
-            Nombre del titular
-          </span>
-          <input
-            value={cardholderName}
-            onChange={(event) => setCardholderName(event.target.value)}
-            placeholder="Nombre como aparece en la tarjeta"
-            className="w-full rounded-none border border-border bg-white px-4 py-3 text-base text-primary outline-none transition-colors focus:border-accent"
-            autoComplete="cc-name"
-          />
-        </label>
-        <label className="space-y-2">
-          <span className="text-sm font-semibold text-primary">Pais</span>
-          <select
-            value={country}
-            onChange={(event) => setCountry(event.target.value)}
-            className="w-full rounded-none border border-border bg-white px-4 py-3 text-base text-primary outline-none transition-colors focus:border-accent"
-            autoComplete="country"
-          >
-            <option value="MX">Mexico</option>
-            <option value="US">Estados Unidos</option>
-          </select>
-        </label>
-      </div>
+      {chargeSummary ? (
+        <div className="rounded-[14px] border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-medium text-sky-700">
+          {chargeSummary}
+        </div>
+      ) : null}
 
-      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px_160px]">
-        <label className="space-y-2">
-          <span className="text-sm font-semibold text-primary">
-            Numero de tarjeta
-          </span>
-          <div className={elementBaseClass}>
-            <CardNumberElement options={elementOptions} />
+      <div className="rounded-[20px] border border-[#eadfd3] bg-white p-5 shadow-[0_12px_35px_rgba(56,42,30,0.06)]">
+        <div className="flex items-center gap-3 text-sm font-semibold text-primary">
+          <span className="text-secondary">Tarjeta</span>
+        </div>
+        <p className="mt-3 text-sm leading-7 text-muted-foreground">
+          Proceso de compra seguro y rapido. Tu tarjeta se usa para confirmar este cargo
+          y, en parcialidades, para los pagos futuros autorizados.
+        </p>
+
+        <div className="mt-5 space-y-4">
+          <label className="block space-y-2">
+            <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+              Numero de tarjeta
+            </span>
+            <div className={elementBaseClass}>
+              <CardNumberElement options={elementOptions} />
+            </div>
+          </label>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block space-y-2">
+              <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                Fecha de caducidad
+              </span>
+              <div className={elementBaseClass}>
+                <CardExpiryElement options={elementOptions} />
+              </div>
+            </label>
+            <label className="block space-y-2">
+              <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                Codigo de seguridad
+              </span>
+              <div className={elementBaseClass}>
+                <CardCvcElement options={elementOptions} />
+              </div>
+            </label>
           </div>
-        </label>
-        <label className="space-y-2">
-          <span className="text-sm font-semibold text-primary">
-            Fecha de expiracion
-          </span>
-          <div className={elementBaseClass}>
-            <CardExpiryElement options={elementOptions} />
+
+          <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_180px]">
+            <label className="block space-y-2">
+              <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                Nombre del titular
+              </span>
+              <input
+                value={cardholderName}
+                onChange={(event) => setCardholderName(event.target.value)}
+                placeholder="Nombre como aparece en la tarjeta"
+                className="w-full rounded-[14px] border border-border bg-white px-4 py-4 text-base text-primary outline-none transition-colors focus:border-accent"
+                autoComplete="cc-name"
+              />
+            </label>
+            <label className="block space-y-2">
+              <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                Pais
+              </span>
+              <select
+                value={country}
+                onChange={(event) => setCountry(event.target.value)}
+                className="w-full rounded-[14px] border border-border bg-white px-4 py-4 text-base text-primary outline-none transition-colors focus:border-accent"
+                autoComplete="country"
+              >
+                <option value="MX">Mexico</option>
+                <option value="US">Estados Unidos</option>
+              </select>
+            </label>
           </div>
-        </label>
-        <label className="space-y-2">
-          <span className="text-sm font-semibold text-primary">
-            Codigo de seguridad
-          </span>
-          <div className={elementBaseClass}>
-            <CardCvcElement options={elementOptions} />
-          </div>
-        </label>
+        </div>
       </div>
 
       {errorMessage ? (
-        <div className="border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-[14px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {errorMessage}
         </div>
       ) : null}
 
       {statusMessage ? (
-        <div className="border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">
+        <div className="rounded-[14px] border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">
           {statusMessage}
         </div>
       ) : null}
@@ -227,9 +252,9 @@ function PaymentElementForm({
       <button
         type="submit"
         disabled={!stripe || isSubmitting || !cardholderName.trim()}
-        className="w-full bg-accent px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-primary transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-[14px] bg-secondary px-5 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {isSubmitting ? "Procesando..." : "Confirmar pago"}
+        {isSubmitting ? "Procesando..." : submitLabel ?? "Confirmar pago"}
       </button>
     </form>
   );
@@ -240,6 +265,8 @@ export function StripeElementsCheckout({
   courseSlug,
   option,
   anonymousCustomer,
+  chargeSummary,
+  submitLabel,
 }: {
   courseId: string;
   courseSlug: string;
@@ -249,6 +276,8 @@ export function StripeElementsCheckout({
     email: string;
     phone: string;
   };
+  chargeSummary?: string;
+  submitLabel?: string;
 }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -383,6 +412,8 @@ export function StripeElementsCheckout({
         clientSecret={clientSecret}
         isAnonymous={isAnonymous}
         anonymousCustomer={anonymousCustomer}
+        chargeSummary={chargeSummary}
+        submitLabel={submitLabel}
       />
     </Elements>
   );

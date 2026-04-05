@@ -29,6 +29,32 @@ function getPlanAmount(course: PublicAdmissionCourse, option: PurchaseOption) {
   return formatCurrency(course.installmentAmountMxn) ?? option.description;
 }
 
+function getPlanSummary(course: PublicAdmissionCourse, option: PurchaseOption) {
+  const amount = getPlanAmount(course, option);
+
+  if (option.code === "one_time") {
+    return {
+      amount,
+      chargeSummary: `Se cobrara hoy ${amount} en un solo pago para activar tu acceso.`,
+      submitLabel: `Pagar ${amount}`,
+    };
+  }
+
+  if (option.code === "three_month") {
+    return {
+      amount,
+      chargeSummary: `Se cobrara hoy la primera mensualidad de ${amount}. Los 2 cargos restantes quedaran programados automaticamente.`,
+      submitLabel: `Pagar ${amount}`,
+    };
+  }
+
+  return {
+    amount,
+    chargeSummary: `Se cobrara hoy la primera mensualidad de ${amount}. Los pagos restantes se cobraran conforme al plan seleccionado.`,
+    submitLabel: `Pagar ${amount}`,
+  };
+}
+
 export function PublicAdmissionPage({
   course,
 }: {
@@ -54,6 +80,7 @@ export function PublicAdmissionPage({
   if (!selectedOption) return null;
 
   const canContinue = Boolean(name.trim() && email.trim() && phone.trim());
+  const selectedPlan = getPlanSummary(course, selectedOption);
 
   return (
     <main className="min-h-screen bg-[#f6f3ee] text-primary">
@@ -182,25 +209,40 @@ export function PublicAdmissionPage({
                       Datos del estudiante
                     </p>
                     <div className="mt-4 space-y-4">
-                      <input
-                        value={name}
-                        onChange={(event) => setName(event.target.value)}
-                        placeholder="Nombre(s) y Apellidos"
-                        className="w-full rounded-[16px] border border-border bg-white px-4 py-4 text-sm text-primary outline-none transition-colors focus:border-accent"
-                      />
-                      <input
-                        value={email}
-                        onChange={(event) => setEmail(event.target.value)}
-                        placeholder="tu@correo.com"
-                        type="email"
-                        className="w-full rounded-[16px] border border-border bg-white px-4 py-4 text-sm text-primary outline-none transition-colors focus:border-accent"
-                      />
-                      <input
-                        value={phone}
-                        onChange={(event) => setPhone(event.target.value)}
-                        placeholder="(000) 000-0000"
-                        className="w-full rounded-[16px] border border-border bg-white px-4 py-4 text-sm text-primary outline-none transition-colors focus:border-accent"
-                      />
+                      <label className="block space-y-2">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                          Nombre completo
+                        </span>
+                        <input
+                          value={name}
+                          onChange={(event) => setName(event.target.value)}
+                          placeholder="Nombre(s) y Apellidos"
+                          className="w-full rounded-[16px] border border-border bg-white px-4 py-4 text-sm text-primary outline-none transition-colors focus:border-accent"
+                        />
+                      </label>
+                      <label className="block space-y-2">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                          Correo electronico
+                        </span>
+                        <input
+                          value={email}
+                          onChange={(event) => setEmail(event.target.value)}
+                          placeholder="tu@correo.com"
+                          type="email"
+                          className="w-full rounded-[16px] border border-border bg-white px-4 py-4 text-sm text-primary outline-none transition-colors focus:border-accent"
+                        />
+                      </label>
+                      <label className="block space-y-2">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                          Telefono
+                        </span>
+                        <input
+                          value={phone}
+                          onChange={(event) => setPhone(event.target.value)}
+                          placeholder="(000) 000-0000"
+                          className="w-full rounded-[16px] border border-border bg-white px-4 py-4 text-sm text-primary outline-none transition-colors focus:border-accent"
+                        />
+                      </label>
                       {!showPayment ? (
                         <button
                           type="button"
@@ -208,19 +250,46 @@ export function PublicAdmissionPage({
                           onClick={() => setShowPayment(true)}
                           className="w-full rounded-[16px] bg-[#c8958d] px-5 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          Completa tus datos para pagar
+                          Continuar al pago de {selectedPlan.amount}
                         </button>
                       ) : (
-                        <StripeElementsCheckout
-                          courseId={course.id}
-                          courseSlug={course.slug}
-                          option={selectedOption}
-                          anonymousCustomer={{
-                            name,
-                            email,
-                            phone,
-                          }}
-                        />
+                        <div className="space-y-4">
+                          <div className="rounded-[16px] border border-secondary/20 bg-secondary/[0.04] px-4 py-4">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-secondary">
+                              Resumen del cobro
+                            </p>
+                            <div className="mt-3 flex items-end justify-between gap-4">
+                              <div>
+                                <p className="text-sm font-semibold text-primary">
+                                  {selectedOption.code === "one_time"
+                                    ? "Pago unico"
+                                    : selectedOption.code === "three_month"
+                                      ? "3 mensualidades"
+                                      : "6 mensualidades"}
+                                </p>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                  {selectedPlan.chargeSummary}
+                                </p>
+                              </div>
+                              <p className="text-3xl font-bold text-primary">
+                                {selectedPlan.amount}
+                              </p>
+                            </div>
+                          </div>
+
+                          <StripeElementsCheckout
+                            courseId={course.id}
+                            courseSlug={course.slug}
+                            option={selectedOption}
+                            anonymousCustomer={{
+                              name,
+                              email,
+                              phone,
+                            }}
+                            chargeSummary={selectedPlan.chargeSummary}
+                            submitLabel={selectedPlan.submitLabel}
+                          />
+                        </div>
                       )}
                     </div>
                   </section>
