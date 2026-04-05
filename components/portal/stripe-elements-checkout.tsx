@@ -213,17 +213,8 @@ function PaymentElementForm({
             </label>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_180px]">
-            {isAnonymous ? (
-              <div className="space-y-2">
-                <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                  Titular de la tarjeta
-                </span>
-                <div className="rounded-[14px] border border-border bg-muted/30 px-4 py-4 text-base text-primary">
-                  {anonymousCustomer?.name}
-                </div>
-              </div>
-            ) : (
+          <div className={`grid gap-4 ${isAnonymous ? "" : "sm:grid-cols-[minmax(0,1fr)_180px]"}`}>
+            {!isAnonymous ? (
               <label className="block space-y-2">
                 <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
                   Nombre del titular
@@ -236,7 +227,7 @@ function PaymentElementForm({
                   autoComplete="cc-name"
                 />
               </label>
-            )}
+            ) : null}
             <label className="block space-y-2">
               <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
                 Pais
