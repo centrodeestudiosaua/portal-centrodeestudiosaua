@@ -5,6 +5,22 @@ import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
 import { getStripeServerClient } from "@/lib/stripe";
 
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function normalizePhone(value: string) {
+  return value.replace(/\D/g, "");
+}
+
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function isValidPhone(value: string) {
+  return value.length === 10;
+}
+
 async function findOrCreateCustomer(stripe: Stripe, email: string, userId: string) {
   const existing = await stripe.customers.list({ email, limit: 1 });
   const customer = existing.data[0];
@@ -55,8 +71,8 @@ export async function POST(request: Request) {
     const mode = body.mode === "subscription" ? "subscription" : "payment";
     const purchaseOption = body.purchaseOption?.trim() || "one_time";
     const customerName = body.customerName?.trim() ?? "";
-    const customerEmail = body.customerEmail?.trim().toLowerCase() ?? "";
-    const customerPhone = body.customerPhone?.trim() ?? "";
+    const customerEmail = normalizeEmail(body.customerEmail ?? "");
+    const customerPhone = normalizePhone(body.customerPhone ?? "");
     const monthsTotal =
       purchaseOption === "three_month" ? 3 : purchaseOption === "monthly" ? 6 : 1;
 
@@ -83,9 +99,23 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!isValidEmail(resolvedUserEmail)) {
+      return NextResponse.json(
+        { error: "Invalid customer email" },
+        { status: 400 },
+      );
+    }
+
     if (!resolvedUserId && (!customerName || !customerPhone)) {
       return NextResponse.json(
         { error: "Missing anonymous customer details" },
+        { status: 400 },
+      );
+    }
+
+    if (!resolvedUserId && !isValidPhone(customerPhone)) {
+      return NextResponse.json(
+        { error: "Invalid anonymous customer phone" },
         { status: 400 },
       );
     }

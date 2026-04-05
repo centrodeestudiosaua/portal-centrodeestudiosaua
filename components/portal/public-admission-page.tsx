@@ -7,6 +7,30 @@ import { CalendarDays, Clock3, ShieldCheck } from "lucide-react";
 import { StripeElementsCheckout } from "@/components/portal/stripe-elements-checkout";
 import type { PublicAdmissionCourse, PurchaseOption } from "@/lib/portal/data";
 
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function onlyDigits(value: string) {
+  return value.replace(/\D/g, "");
+}
+
+function formatPhone(value: string) {
+  const digits = onlyDigits(value).slice(0, 10);
+
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(value));
+}
+
+function isValidPhone(value: string) {
+  return onlyDigits(value).length === 10;
+}
+
 function formatCurrency(value: number | null) {
   if (typeof value !== "number") return null;
 
@@ -79,7 +103,10 @@ export function PublicAdmissionPage({
 
   if (!selectedOption) return null;
 
-  const canContinue = Boolean(name.trim() && email.trim() && phone.trim());
+  const normalizedEmail = normalizeEmail(email);
+  const formattedPhone = formatPhone(phone);
+  const canContinue =
+    Boolean(name.trim()) && isValidEmail(email) && isValidPhone(phone);
   const selectedPlan = getPlanSummary(course, selectedOption);
 
   return (
@@ -217,6 +244,8 @@ export function PublicAdmissionPage({
                           value={name}
                           onChange={(event) => setName(event.target.value)}
                           placeholder="Nombre(s) y Apellidos"
+                          autoComplete="name"
+                          required
                           className="w-full rounded-[16px] border border-border bg-white px-4 py-4 text-sm text-primary outline-none transition-colors focus:border-accent"
                         />
                       </label>
@@ -226,22 +255,39 @@ export function PublicAdmissionPage({
                         </span>
                         <input
                           value={email}
-                          onChange={(event) => setEmail(event.target.value)}
+                          onChange={(event) => setEmail(normalizeEmail(event.target.value))}
                           placeholder="tu@correo.com"
                           type="email"
+                          autoComplete="email"
+                          inputMode="email"
+                          required
                           className="w-full rounded-[16px] border border-border bg-white px-4 py-4 text-sm text-primary outline-none transition-colors focus:border-accent"
                         />
+                        {email && !isValidEmail(email) ? (
+                          <p className="text-sm text-red-700">
+                            Ingresa un correo valido.
+                          </p>
+                        ) : null}
                       </label>
                       <label className="block space-y-2">
                         <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                           Telefono
                         </span>
                         <input
-                          value={phone}
-                          onChange={(event) => setPhone(event.target.value)}
-                          placeholder="(000) 000-0000"
+                          value={formattedPhone}
+                          onChange={(event) => setPhone(onlyDigits(event.target.value))}
+                          placeholder="(664) 800-0011"
+                          type="tel"
+                          autoComplete="tel"
+                          inputMode="numeric"
+                          required
                           className="w-full rounded-[16px] border border-border bg-white px-4 py-4 text-sm text-primary outline-none transition-colors focus:border-accent"
                         />
+                        {phone && !isValidPhone(phone) ? (
+                          <p className="text-sm text-red-700">
+                            Ingresa un telefono de 10 digitos.
+                          </p>
+                        ) : null}
                       </label>
                       {!showPayment ? (
                         <button
@@ -283,8 +329,8 @@ export function PublicAdmissionPage({
                             option={selectedOption}
                             anonymousCustomer={{
                               name,
-                              email,
-                              phone,
+                              email: normalizedEmail,
+                              phone: formattedPhone,
                             }}
                             chargeSummary={selectedPlan.chargeSummary}
                             submitLabel={selectedPlan.submitLabel}
