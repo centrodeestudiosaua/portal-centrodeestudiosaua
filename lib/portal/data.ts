@@ -357,7 +357,7 @@ export const getDashboardData = cache(async (): Promise<{
   const user = await getPortalUser();
   if (!user) return null;
 
-  const supabase = await createClient();
+  const supabase = createAdminPortalClient();
 
   const [{ data: enrollments }, { data: sessions }, { data: certificates }] =
     await Promise.all([
@@ -517,7 +517,7 @@ export const getCoursesPageData = cache(async (): Promise<{
   const user = await getPortalUser();
   if (!user) return null;
 
-  const supabase = await createClient();
+  const supabase = createAdminPortalClient();
   const [{ data: coursesData }, { data: enrollments }, { data: progressRows }] =
     await Promise.all([
       supabase
@@ -600,7 +600,7 @@ export const getCourseDetail = cache(async (slug: string): Promise<CourseDetail 
   const user = await getPortalUser();
   if (!user) return null;
 
-  const supabase = await createClient();
+  const supabase = createAdminPortalClient();
   const { data: course } = await supabase
     .from("courses")
     .select(
@@ -722,7 +722,7 @@ export const getLessonDetail = cache(async (lessonId: string): Promise<LessonDet
   const user = await getPortalUser();
   if (!user) return null;
 
-  const supabase = await createClient();
+  const supabase = createAdminPortalClient();
   const { data: lesson } = await supabase
     .from("course_lessons")
     .select(
