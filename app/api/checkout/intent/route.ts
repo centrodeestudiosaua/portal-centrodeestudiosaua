@@ -30,6 +30,9 @@ export async function POST(request: Request) {
       priceId?: string;
       mode?: "payment" | "subscription";
       purchaseOption?: string;
+      customerName?: string;
+      customerEmail?: string;
+      customerPhone?: string;
     };
 
     const courseId = body.courseId?.trim();
@@ -37,6 +40,9 @@ export async function POST(request: Request) {
     const priceId = body.priceId?.trim();
     const mode = body.mode === "subscription" ? "subscription" : "payment";
     const purchaseOption = body.purchaseOption?.trim() || "one_time";
+    const customerName = body.customerName?.trim() ?? "";
+    const customerEmail = body.customerEmail?.trim().toLowerCase() ?? "";
+    const customerPhone = body.customerPhone?.trim() ?? "";
     const monthsTotal =
       purchaseOption === "three_month" ? 3 : purchaseOption === "monthly" ? 6 : 1;
 
@@ -52,9 +58,21 @@ export async function POST(request: Request) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
+    const resolvedUserId = user?.id ?? null;
+    const resolvedUserEmail = user?.email?.toLowerCase() ?? customerEmail;
 
-    if (!user?.id || !user.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!resolvedUserEmail) {
+      return NextResponse.json(
+        { error: "Missing customer email" },
+        { status: 400 },
+      );
+    }
+
+    if (!resolvedUserId && (!customerName || !customerPhone)) {
+      return NextResponse.json(
+        { error: "Missing anonymous customer details" },
+        { status: 400 },
+      );
     }
 
     const [{ data: course }, { data: enrollment }] = await Promise.all([
@@ -66,13 +84,15 @@ export async function POST(request: Request) {
         .eq("id", courseId)
         .eq("slug", courseSlug)
         .maybeSingle(),
-      supabase
-        .from("enrollments")
-        .select("id")
-        .eq("student_id", user.id)
-        .eq("course_id", courseId)
-        .in("status", ["active", "completed"])
-        .maybeSingle(),
+      resolvedUserId
+        ? supabase
+            .from("enrollments")
+            .select("id")
+            .eq("student_id", resolvedUserId)
+            .eq("course_id", courseId)
+            .in("status", ["active", "completed"])
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
 
     if (!course) {
@@ -115,22 +135,29 @@ export async function POST(request: Request) {
         amount: price.unit_amount,
         currency: price.currency,
         payment_method_types: ["card"],
-        receipt_email: user.email,
+        receipt_email: resolvedUserEmail,
         metadata: {
-          user_id: user.id,
-          user_email: user.email,
+          user_id: resolvedUserId ?? "",
+          user_email: resolvedUserEmail,
           course_id: courseId,
           course_slug: courseSlug,
           purchase_option: purchaseOption,
           price_id: priceId,
           payment_type: "one_time",
+          customer_name: customerName,
+          customer_phone: customerPhone,
+          needs_account_creation: resolvedUserId ? "false" : "true",
         },
       });
 
       return NextResponse.json({ clientSecret: paymentIntent.client_secret });
     }
 
-    const customerId = await findOrCreateCustomer(stripe, user.email, user.id);
+    const customerId = await findOrCreateCustomer(
+      stripe,
+      resolvedUserEmail,
+      resolvedUserId ?? `anon:${resolvedUserEmail}`,
+    );
     const price = await stripe.prices.retrieve(priceId);
 
     if (!price.unit_amount || !price.currency) {
@@ -146,10 +173,10 @@ export async function POST(request: Request) {
       customer: customerId,
       payment_method_types: ["card"],
       setup_future_usage: "off_session",
-      receipt_email: user.email,
+      receipt_email: resolvedUserEmail,
       metadata: {
-        user_id: user.id,
-        user_email: user.email,
+        user_id: resolvedUserId ?? "",
+        user_email: resolvedUserEmail,
         course_id: courseId,
         course_slug: courseSlug,
         purchase_option: purchaseOption,
@@ -157,6 +184,9 @@ export async function POST(request: Request) {
         payment_type: "installments",
         plan: purchaseOption,
         months_total: String(monthsTotal),
+        customer_name: customerName,
+        customer_phone: customerPhone,
+        needs_account_creation: resolvedUserId ? "false" : "true",
       },
     });
 

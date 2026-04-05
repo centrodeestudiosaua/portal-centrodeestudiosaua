@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/server";
 
@@ -178,6 +179,27 @@ export type LessonDetail = {
   } | null;
 };
 
+export type PublicAdmissionCourse = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  longDescription: string | null;
+  thumbnailUrl: string | null;
+  badgeText: string | null;
+  urgencyText: string | null;
+  durationLabel: string | null;
+  modalityLabel: string | null;
+  startDateLabel: string | null;
+  priceMxn: number | null;
+  installmentAmountMxn: number | null;
+  installmentsCount: number | null;
+  benefits: string[];
+  targetAudience: string[];
+  syllabus: Array<{ modulo?: string; titulo?: string; sesiones?: number }>;
+  purchaseOptions: PurchaseOption[];
+};
+
 function formatLastSeen(lastViewedAt: string | null, fallback = "Sin actividad") {
   if (!lastViewedAt) return fallback;
 
@@ -308,6 +330,19 @@ async function getAuthenticatedPortalUser(): Promise<PortalUser | null> {
     email: user.email,
     profile: profile ?? null,
   };
+}
+
+function createAdminPortalClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error("Missing Supabase admin configuration");
+  }
+
+  return createSupabaseClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
 }
 
 export const getPortalUser = cache(getAuthenticatedPortalUser);
@@ -773,3 +808,64 @@ export const getLessonDetail = cache(async (lessonId: string): Promise<LessonDet
     nextLesson: nextLesson ? { id: nextLesson.id, title: nextLesson.title } : null,
   };
 });
+
+export const getPublicAdmissionCourse = cache(
+  async (slug: string): Promise<PublicAdmissionCourse | null> => {
+    const supabase = createAdminPortalClient();
+    const { data: course } = await supabase
+      .from("courses")
+      .select(
+        `
+        id,
+        slug,
+        title,
+        description,
+        long_description,
+        thumbnail_url,
+        cover_image_url,
+        badge_text,
+        urgency_text,
+        duration_label,
+        modality_label,
+        start_date_label,
+        price_mxn,
+        installment_amount_mxn,
+        installments_count,
+        stripe_one_time_price_id,
+        stripe_three_month_price_id,
+        stripe_monthly_price_id,
+        benefits,
+        target_audience,
+        syllabus
+      `,
+      )
+      .eq("slug", slug)
+      .eq("is_published", true)
+      .maybeSingle();
+
+    if (!course) return null;
+
+    return {
+      id: course.id,
+      slug: course.slug,
+      title: course.title,
+      description: course.description,
+      longDescription: course.long_description,
+      thumbnailUrl: toCover(course.thumbnail_url, course.cover_image_url),
+      badgeText: course.badge_text,
+      urgencyText: course.urgency_text,
+      durationLabel: course.duration_label,
+      modalityLabel: course.modality_label,
+      startDateLabel: course.start_date_label,
+      priceMxn: course.price_mxn,
+      installmentAmountMxn: course.installment_amount_mxn,
+      installmentsCount: course.installments_count,
+      benefits: Array.isArray(course.benefits) ? course.benefits : [],
+      targetAudience: Array.isArray(course.target_audience)
+        ? course.target_audience
+        : [],
+      syllabus: Array.isArray(course.syllabus) ? course.syllabus : [],
+      purchaseOptions: getPurchaseOptions(course),
+    };
+  },
+);

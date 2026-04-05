@@ -26,9 +26,17 @@ type CheckoutIntentPayload = {
 function PaymentElementForm({
   courseSlug,
   clientSecret,
+  isAnonymous,
+  anonymousCustomer,
 }: {
   courseSlug: string;
   clientSecret: string;
+  isAnonymous?: boolean;
+  anonymousCustomer?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
 }) {
   const router = useRouter();
   const stripe = useStripe();
@@ -121,6 +129,7 @@ function PaymentElementForm({
       const confirmPayload = (confirmRaw ? JSON.parse(confirmRaw) : {}) as {
         ok?: boolean;
         error?: string;
+        magicLink?: string | null;
       };
 
       if (!confirmResponse.ok || !confirmPayload.ok) {
@@ -129,6 +138,11 @@ function PaymentElementForm({
           confirmPayload.error ?? "El pago se hizo, pero no se pudo activar tu acceso.",
         );
         setIsSubmitting(false);
+        return;
+      }
+
+      if (isAnonymous && confirmPayload.magicLink) {
+        window.location.assign(confirmPayload.magicLink);
         return;
       }
 
@@ -225,14 +239,21 @@ export function StripeElementsCheckout({
   courseId,
   courseSlug,
   option,
+  anonymousCustomer,
 }: {
   courseId: string;
   courseSlug: string;
   option: PurchaseOption;
+  anonymousCustomer?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
 }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const isAnonymous = Boolean(anonymousCustomer);
 
   const appearance = useMemo(
     () => ({
@@ -273,6 +294,9 @@ export function StripeElementsCheckout({
             priceId: option.priceId,
             mode: option.mode,
             purchaseOption: option.code,
+            customerName: anonymousCustomer?.name,
+            customerEmail: anonymousCustomer?.email,
+            customerPhone: anonymousCustomer?.phone,
           }),
         });
 
@@ -306,7 +330,16 @@ export function StripeElementsCheckout({
     return () => {
       cancelled = true;
     };
-  }, [courseId, courseSlug, option.code, option.mode, option.priceId]);
+  }, [
+    anonymousCustomer?.email,
+    anonymousCustomer?.name,
+    anonymousCustomer?.phone,
+    courseId,
+    courseSlug,
+    option.code,
+    option.mode,
+    option.priceId,
+  ]);
 
   if (!stripePromise) {
     return (
@@ -345,7 +378,12 @@ export function StripeElementsCheckout({
         appearance,
       }}
     >
-      <PaymentElementForm courseSlug={courseSlug} clientSecret={clientSecret} />
+      <PaymentElementForm
+        courseSlug={courseSlug}
+        clientSecret={clientSecret}
+        isAnonymous={isAnonymous}
+        anonymousCustomer={anonymousCustomer}
+      />
     </Elements>
   );
 }

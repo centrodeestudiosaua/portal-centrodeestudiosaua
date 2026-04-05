@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 
@@ -45,10 +46,6 @@ export async function POST(request: Request) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user?.id || !user.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -59,10 +56,27 @@ export async function POST(request: Request) {
     const admin = createAdminClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+    const headerStore = await headers();
+    const host = headerStore.get("x-forwarded-host") ?? headerStore.get("host");
+    const protocol = headerStore.get("x-forwarded-proto") ?? "http";
+    const origin =
+      host && protocol
+        ? `${protocol}://${host}`
+        : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    const paymentEmail = (paymentIntent.metadata?.user_email ?? "").toLowerCase();
+    const needsAccountCreation =
+      paymentIntent.metadata?.needs_account_creation === "true";
 
-    if (paymentIntent.metadata?.user_id !== user.id) {
+    let resolvedUserId = user?.id ?? null;
+    let resolvedUserEmail = user?.email?.toLowerCase() ?? paymentEmail;
+
+    if (!resolvedUserId && !needsAccountCreation) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (resolvedUserId && paymentIntent.metadata?.user_id && paymentIntent.metadata.user_id !== resolvedUserId) {
       return NextResponse.json({ error: "Payment does not belong to current user" }, { status: 403 });
     }
 
@@ -82,9 +96,76 @@ export async function POST(request: Request) {
     const paymentType = paymentIntent.metadata?.payment_type ?? "one_time";
     const priceId = paymentIntent.metadata?.price_id ?? "";
     const monthsTotal = Number(paymentIntent.metadata?.months_total ?? "1");
+    const customerName = paymentIntent.metadata?.customer_name ?? "";
+    const customerPhone = paymentIntent.metadata?.customer_phone ?? null;
 
     if (!courseId) {
       return NextResponse.json({ error: "Payment metadata missing course" }, { status: 400 });
+    }
+
+    let magicLink: string | null = null;
+
+    if (!resolvedUserId && needsAccountCreation) {
+      const { data: listedUsers } = await admin.auth.admin.listUsers({
+        page: 1,
+        perPage: 200,
+      });
+      const existingUser =
+        listedUsers?.users.find(
+          (listedUser) => (listedUser.email ?? "").toLowerCase() === paymentEmail,
+        ) ?? null;
+
+      if (existingUser) {
+        resolvedUserId = existingUser.id;
+      } else {
+        const { data: createdUser, error: createUserError } =
+          await admin.auth.admin.createUser({
+            email: paymentEmail,
+            email_confirm: true,
+            password: crypto.randomUUID(),
+            user_metadata: {
+              full_name: customerName,
+              phone: customerPhone,
+            },
+          });
+
+        if (createUserError || !createdUser.user) {
+          return NextResponse.json(
+            { error: createUserError?.message ?? "No se pudo crear el alumno" },
+            { status: 500 },
+          );
+        }
+
+        resolvedUserId = createdUser.user.id;
+      }
+
+      resolvedUserEmail = paymentEmail;
+
+      const [firstName, ...lastNameParts] = customerName.split(" ").filter(Boolean);
+      await admin.from("student_profiles").upsert(
+        {
+          id: resolvedUserId,
+          email: resolvedUserEmail,
+          full_name: customerName,
+          first_name: firstName ?? "",
+          last_name: lastNameParts.join(" "),
+          phone: customerPhone,
+          role: "student",
+        },
+        { onConflict: "id" },
+      );
+
+      const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+        type: "magiclink",
+        email: resolvedUserEmail,
+        options: {
+          redirectTo: `${origin}/dashboard`,
+        },
+      });
+
+      if (!linkError) {
+        magicLink = linkData.properties?.action_link ?? null;
+      }
     }
 
     const { data: existingPayment } = await admin
@@ -95,7 +176,7 @@ export async function POST(request: Request) {
 
     if (!existingPayment) {
       await admin.from("payments").insert({
-        student_id: user.id,
+        student_id: resolvedUserId!,
         course_id: courseId,
         provider: "stripe",
         payment_type: paymentType === "installments" ? "installment" : "one_time",
@@ -111,7 +192,7 @@ export async function POST(request: Request) {
 
     await admin.from("enrollments").upsert(
       {
-        student_id: user.id,
+        student_id: resolvedUserId!,
         course_id: courseId,
         status: "active",
         enrolled_at: new Date().toISOString(),
@@ -125,7 +206,7 @@ export async function POST(request: Request) {
       const customerId =
         typeof paymentIntent.customer === "string"
           ? paymentIntent.customer
-          : await findOrCreateCustomer(stripe, user.email, user.id);
+          : await findOrCreateCustomer(stripe, resolvedUserEmail, resolvedUserId!);
       const paymentMethodId =
         typeof paymentIntent.payment_method === "string"
           ? paymentIntent.payment_method
@@ -152,7 +233,7 @@ export async function POST(request: Request) {
 
       const matchingSubscription = existingSubscriptions.data.find(
         (subscription) =>
-          subscription.metadata?.user_id === user.id &&
+          subscription.metadata?.user_id === resolvedUserId &&
           subscription.metadata?.course_id === courseId &&
           subscription.metadata?.plan === purchaseOption &&
           subscription.status !== "canceled" &&
@@ -173,8 +254,8 @@ export async function POST(request: Request) {
           trial_end: trialEnd,
           cancel_at: cancelAt,
           metadata: {
-            user_id: user.id,
-            user_email: user.email,
+            user_id: resolvedUserId!,
+            user_email: resolvedUserEmail,
             course_id: courseId,
             course_slug: courseSlug,
             purchase_option: purchaseOption,
@@ -191,6 +272,7 @@ export async function POST(request: Request) {
       ok: true,
       enrolled: true,
       subscriptionId,
+      magicLink,
     });
   } catch (error) {
     const message =
