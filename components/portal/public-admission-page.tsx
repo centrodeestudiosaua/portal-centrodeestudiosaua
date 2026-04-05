@@ -12,7 +12,7 @@ function normalizeEmail(value: string) {
 }
 
 function onlyDigits(value: string) {
-  return value.replace(/\D/g, "");
+  return value.replace(/\D/g, "").slice(0, 10);
 }
 
 function formatPhone(value: string) {
@@ -280,6 +280,7 @@ export function PublicAdmissionPage({
                           type="tel"
                           autoComplete="tel"
                           inputMode="numeric"
+                          maxLength={14}
                           required
                           className="w-full rounded-[16px] border border-border bg-white px-4 py-4 text-sm text-primary outline-none transition-colors focus:border-accent"
                         />
