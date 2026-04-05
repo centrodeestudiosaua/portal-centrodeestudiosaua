@@ -170,14 +170,18 @@ export async function POST(request: Request) {
         );
       }
 
-      magicLink = linkData.properties?.action_link ?? null;
+      const hashedToken = linkData.properties?.hashed_token ?? null;
 
-      if (!magicLink) {
+      if (!hashedToken) {
         return NextResponse.json(
           { error: "No se pudo generar la redireccion de acceso" },
           { status: 500 },
         );
       }
+
+      magicLink = `${origin}/auth/confirm?token_hash=${encodeURIComponent(
+        hashedToken,
+      )}&type=magiclink&next=${encodeURIComponent("/dashboard")}`;
     }
 
     const { data: existingPayment } = await admin
