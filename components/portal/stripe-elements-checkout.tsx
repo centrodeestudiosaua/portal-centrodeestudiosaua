@@ -45,7 +45,9 @@ function PaymentElementForm({
   const router = useRouter();
   const stripe = useStripe();
   const elements = useElements();
-  const [cardholderName, setCardholderName] = useState("");
+  const [cardholderName, setCardholderName] = useState(
+    anonymousCustomer?.name ?? "",
+  );
   const [country, setCountry] = useState("MX");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -77,7 +79,12 @@ function PaymentElementForm({
       return;
     }
 
-    if (!cardholderName.trim()) {
+    const billingName = (isAnonymous
+      ? anonymousCustomer?.name
+      : cardholderName
+    )?.trim();
+
+    if (!billingName) {
       setErrorMessage("Ingresa el nombre del titular de la tarjeta.");
       return;
     }
@@ -99,7 +106,7 @@ function PaymentElementForm({
       payment_method: {
         card: cardElement,
         billing_details: {
-          name: cardholderName.trim(),
+          name: billingName,
           address: {
             country,
           },
@@ -207,18 +214,29 @@ function PaymentElementForm({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_180px]">
-            <label className="block space-y-2">
-              <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                Nombre del titular
-              </span>
-              <input
-                value={cardholderName}
-                onChange={(event) => setCardholderName(event.target.value)}
-                placeholder="Nombre como aparece en la tarjeta"
-                className="w-full rounded-[14px] border border-border bg-white px-4 py-4 text-base text-primary outline-none transition-colors focus:border-accent"
-                autoComplete="cc-name"
-              />
-            </label>
+            {isAnonymous ? (
+              <div className="space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                  Titular de la tarjeta
+                </span>
+                <div className="rounded-[14px] border border-border bg-muted/30 px-4 py-4 text-base text-primary">
+                  {anonymousCustomer?.name}
+                </div>
+              </div>
+            ) : (
+              <label className="block space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                  Nombre del titular
+                </span>
+                <input
+                  value={cardholderName}
+                  onChange={(event) => setCardholderName(event.target.value)}
+                  placeholder="Nombre como aparece en la tarjeta"
+                  className="w-full rounded-[14px] border border-border bg-white px-4 py-4 text-base text-primary outline-none transition-colors focus:border-accent"
+                  autoComplete="cc-name"
+                />
+              </label>
+            )}
             <label className="block space-y-2">
               <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
                 Pais
@@ -251,7 +269,11 @@ function PaymentElementForm({
 
       <button
         type="submit"
-        disabled={!stripe || isSubmitting || !cardholderName.trim()}
+        disabled={
+          !stripe ||
+          isSubmitting ||
+          !((isAnonymous ? anonymousCustomer?.name : cardholderName)?.trim())
+        }
         className="w-full rounded-[14px] bg-secondary px-5 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? "Procesando..." : submitLabel ?? "Confirmar pago"}
