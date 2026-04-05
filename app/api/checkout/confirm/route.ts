@@ -99,14 +99,43 @@ function resolveNextInstallmentChargeDate(now: Date, courseStartLabel: string | 
   return nextMonthlyAnchor.getTime() > firstRenewal.getTime() ? nextMonthlyAnchor : firstRenewal;
 }
 
-async function findOrCreateCustomer(stripe: Stripe, email: string, userId: string) {
+async function findOrCreateCustomer(
+  stripe: Stripe,
+  input: {
+    email: string;
+    userId: string;
+    name?: string | null;
+    phone?: string | null;
+  },
+) {
+  const { email, userId, name, phone } = input;
   const existing = await stripe.customers.list({ email, limit: 1 });
   const customer = existing.data[0];
 
-  if (customer) return customer.id;
+  if (customer) {
+    const needsUpdate =
+      (name && customer.name !== name) ||
+      (phone && customer.phone !== phone) ||
+      customer.metadata?.user_id !== userId;
+
+    if (needsUpdate) {
+      await stripe.customers.update(customer.id, {
+        name: name || customer.name || undefined,
+        phone: phone || customer.phone || undefined,
+        metadata: {
+          ...customer.metadata,
+          user_id: userId,
+        },
+      });
+    }
+
+    return customer.id;
+  }
 
   const created = await stripe.customers.create({
     email,
+    name: name || undefined,
+    phone: phone || undefined,
     metadata: { user_id: userId },
   });
 
@@ -321,7 +350,12 @@ export async function POST(request: Request) {
       const customerId =
         typeof paymentIntent.customer === "string"
           ? paymentIntent.customer
-          : await findOrCreateCustomer(stripe, resolvedUserEmail, resolvedUserId!);
+          : await findOrCreateCustomer(stripe, {
+              email: resolvedUserEmail,
+              userId: resolvedUserId!,
+              name: customerName || null,
+              phone: customerPhone || null,
+            });
       const paymentMethodId =
         typeof paymentIntent.payment_method === "string"
           ? paymentIntent.payment_method
@@ -337,6 +371,8 @@ export async function POST(request: Request) {
       await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId }).catch(() => null);
 
       await stripe.customers.update(customerId, {
+        name: customerName || undefined,
+        phone: customerPhone || undefined,
         invoice_settings: { default_payment_method: paymentMethodId },
       });
 

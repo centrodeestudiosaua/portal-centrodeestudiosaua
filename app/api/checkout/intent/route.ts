@@ -21,16 +21,43 @@ function isValidPhone(value: string) {
   return value.length === 10;
 }
 
-async function findOrCreateCustomer(stripe: Stripe, email: string, userId: string) {
+async function findOrCreateCustomer(
+  stripe: Stripe,
+  input: {
+    email: string;
+    userId: string;
+    name?: string | null;
+    phone?: string | null;
+  },
+) {
+  const { email, userId, name, phone } = input;
   const existing = await stripe.customers.list({ email, limit: 1 });
   const customer = existing.data[0];
 
   if (customer) {
+    const needsUpdate =
+      (name && customer.name !== name) ||
+      (phone && customer.phone !== phone) ||
+      customer.metadata?.user_id !== userId;
+
+    if (needsUpdate) {
+      await stripe.customers.update(customer.id, {
+        name: name || customer.name || undefined,
+        phone: phone || customer.phone || undefined,
+        metadata: {
+          ...customer.metadata,
+          user_id: userId,
+        },
+      });
+    }
+
     return customer.id;
   }
 
   const created = await stripe.customers.create({
     email,
+    name: name || undefined,
+    phone: phone || undefined,
     metadata: {
       user_id: userId,
     },
@@ -167,6 +194,16 @@ export async function POST(request: Request) {
       );
     }
 
+    const customerId =
+      resolvedUserEmail
+        ? await findOrCreateCustomer(stripe, {
+            email: resolvedUserEmail,
+            userId: resolvedUserId ?? `anon:${resolvedUserEmail}`,
+            name: customerName || user?.user_metadata?.full_name || null,
+            phone: customerPhone || null,
+          })
+        : null;
+
     if (mode === "payment") {
       const price = await stripe.prices.retrieve(priceId);
 
@@ -180,6 +217,7 @@ export async function POST(request: Request) {
       const paymentIntent = await stripe.paymentIntents.create({
         amount: price.unit_amount,
         currency: price.currency,
+        customer: customerId ?? undefined,
         payment_method_types: ["card"],
         receipt_email: resolvedUserEmail,
         metadata: {
@@ -199,11 +237,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ clientSecret: paymentIntent.client_secret });
     }
 
-    const customerId = await findOrCreateCustomer(
-      stripe,
-      resolvedUserEmail,
-      resolvedUserId ?? `anon:${resolvedUserEmail}`,
-    );
     const price = await stripe.prices.retrieve(priceId);
 
     if (!price.unit_amount || !price.currency) {
@@ -213,13 +246,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: price.unit_amount,
-      currency: price.currency,
-      customer: customerId,
-      payment_method_types: ["card"],
-      setup_future_usage: "off_session",
-      receipt_email: resolvedUserEmail,
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: price.unit_amount,
+        currency: price.currency,
+        customer: customerId ?? undefined,
+        payment_method_types: ["card"],
+        setup_future_usage: "off_session",
+        receipt_email: resolvedUserEmail,
       metadata: {
         user_id: resolvedUserId ?? "",
         user_email: resolvedUserEmail,
