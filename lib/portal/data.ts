@@ -345,15 +345,15 @@ function createAdminPortalClient() {
   });
 }
 
-export const getPortalUser = cache(getAuthenticatedPortalUser);
+export const getPortalUser = getAuthenticatedPortalUser;
 
-export const getDashboardData = cache(async (): Promise<{
+export async function getDashboardData(): Promise<{
   user: PortalUser;
   stats: { label: string; value: string }[];
   activeCourses: DashboardCourse[];
   upcomingClasses: DashboardSession[];
   readyCertificates: DashboardCertificate[];
-} | null> => {
+} | null> {
   const user = await getPortalUser();
   if (!user) return null;
 
@@ -508,12 +508,12 @@ export const getDashboardData = cache(async (): Promise<{
     upcomingClasses,
     readyCertificates,
   };
-});
+}
 
-export const getCoursesPageData = cache(async (): Promise<{
+export async function getCoursesPageData(): Promise<{
   user: PortalUser;
   courses: CourseListItem[];
-} | null> => {
+} | null> {
   const user = await getPortalUser();
   if (!user) return null;
 
@@ -594,9 +594,9 @@ export const getCoursesPageData = cache(async (): Promise<{
     user,
     courses,
   };
-});
+}
 
-export const getCourseDetail = cache(async (slug: string): Promise<CourseDetail | null> => {
+export async function getCourseDetail(slug: string): Promise<CourseDetail | null> {
   const user = await getPortalUser();
   if (!user) return null;
 
@@ -716,9 +716,9 @@ export const getCourseDetail = cache(async (slug: string): Promise<CourseDetail 
         meetingUrl: session.meeting_url,
       })),
   } satisfies CourseDetail;
-});
+}
 
-export const getLessonDetail = cache(async (lessonId: string): Promise<LessonDetail | null> => {
+export async function getLessonDetail(lessonId: string): Promise<LessonDetail | null> {
   const user = await getPortalUser();
   if (!user) return null;
 
@@ -807,7 +807,7 @@ export const getLessonDetail = cache(async (lessonId: string): Promise<LessonDet
       : null,
     nextLesson: nextLesson ? { id: nextLesson.id, title: nextLesson.title } : null,
   };
-});
+}
 
 export const getPublicAdmissionCourse = cache(
   async (slug: string): Promise<PublicAdmissionCourse | null> => {
