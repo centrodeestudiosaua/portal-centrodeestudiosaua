@@ -163,8 +163,20 @@ export async function POST(request: Request) {
         },
       });
 
-      if (!linkError) {
-        magicLink = linkData.properties?.action_link ?? null;
+      if (linkError) {
+        return NextResponse.json(
+          { error: "No se pudo preparar el acceso al portal" },
+          { status: 500 },
+        );
+      }
+
+      magicLink = linkData.properties?.action_link ?? null;
+
+      if (!magicLink) {
+        return NextResponse.json(
+          { error: "No se pudo generar la redireccion de acceso" },
+          { status: 500 },
+        );
       }
     }
 
@@ -268,11 +280,23 @@ export async function POST(request: Request) {
       }
     }
 
+    const redirectUrl = resolvedUserId && !needsAccountCreation
+      ? `${origin}/courses/${courseSlug}?checkout=success`
+      : magicLink;
+
+    if (!redirectUrl) {
+      return NextResponse.json(
+        { error: "No se pudo determinar la redireccion final" },
+        { status: 500 },
+      );
+    }
+
     return NextResponse.json({
       ok: true,
       enrolled: true,
       subscriptionId,
       magicLink,
+      redirectUrl,
     });
   } catch (error) {
     const message =

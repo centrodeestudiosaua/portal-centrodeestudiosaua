@@ -141,6 +141,7 @@ function PaymentElementForm({
         ok?: boolean;
         error?: string;
         magicLink?: string | null;
+        redirectUrl?: string | null;
       };
 
       if (!confirmResponse.ok || !confirmPayload.ok) {
@@ -152,12 +153,13 @@ function PaymentElementForm({
         return;
       }
 
-      if (isAnonymous && confirmPayload.magicLink) {
-        window.location.assign(confirmPayload.magicLink);
+      setStatusMessage("Pago confirmado. Redirigiendo...");
+
+      if (confirmPayload.redirectUrl) {
+        window.location.assign(confirmPayload.redirectUrl);
         return;
       }
 
-      setStatusMessage("Pago confirmado. Redirigiendo...");
       router.push(`/courses/${courseSlug}?checkout=success`);
       return;
     }
