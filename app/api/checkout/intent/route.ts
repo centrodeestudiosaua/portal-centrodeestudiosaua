@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 
 import { createClient } from "@/lib/supabase/server";
@@ -20,6 +21,19 @@ async function findOrCreateCustomer(stripe: Stripe, email: string, userId: strin
   });
 
   return created.id;
+}
+
+function createPortalAdminClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error("Missing Supabase admin configuration");
+  }
+
+  return createAdminClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
 }
 
 export async function POST(request: Request) {
@@ -54,6 +68,7 @@ export async function POST(request: Request) {
     }
 
     const supabase = await createClient();
+    const admin = createPortalAdminClient();
     const stripe = getStripeServerClient();
     const {
       data: { user },
@@ -76,13 +91,14 @@ export async function POST(request: Request) {
     }
 
     const [{ data: course }, { data: enrollment }] = await Promise.all([
-      supabase
+      admin
         .from("courses")
         .select(
           "id, slug, stripe_one_time_price_id, stripe_three_month_price_id, stripe_monthly_price_id",
         )
         .eq("id", courseId)
         .eq("slug", courseSlug)
+        .eq("is_published", true)
         .maybeSingle(),
       resolvedUserId
         ? supabase
