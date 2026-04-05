@@ -65,7 +65,8 @@ export async function updateSession(request: NextRequest) {
     pathname !== "/" &&
     !user &&
     !pathname.startsWith("/login") &&
-    !pathname.startsWith("/auth")
+    !pathname.startsWith("/auth") &&
+    !pathname.startsWith("/admision")
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
