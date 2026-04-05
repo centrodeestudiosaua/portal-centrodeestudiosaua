@@ -12,6 +12,93 @@ function addMonths(date: Date, months: number) {
   return copy;
 }
 
+function addMonthsUtc(date: Date, months: number) {
+  return new Date(
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth() + months,
+      date.getUTCDate(),
+      12,
+      0,
+      0,
+      0,
+    ),
+  );
+}
+
+function daysInUtcMonth(year: number, monthIndex: number) {
+  return new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+}
+
+function buildUtcAnchor(year: number, monthIndex: number, dayOfMonth: number) {
+  return new Date(
+    Date.UTC(
+      year,
+      monthIndex,
+      Math.min(dayOfMonth, daysInUtcMonth(year, monthIndex)),
+      12,
+      0,
+      0,
+      0,
+    ),
+  );
+}
+
+function parseSpanishDateLabel(value: string | null | undefined) {
+  if (!value) return null;
+
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  const match = normalized.match(/^(\d{1,2})\s+de\s+([a-z]+)\s+de\s+(\d{4})$/);
+
+  if (!match) return null;
+
+  const [, dayRaw, monthRaw, yearRaw] = match;
+  const monthIndex = [
+    "enero",
+    "febrero",
+    "marzo",
+    "abril",
+    "mayo",
+    "junio",
+    "julio",
+    "agosto",
+    "septiembre",
+    "octubre",
+    "noviembre",
+    "diciembre",
+  ].indexOf(monthRaw);
+
+  if (monthIndex < 0) return null;
+
+  return buildUtcAnchor(Number(yearRaw), monthIndex, Number(dayRaw));
+}
+
+function resolveNextInstallmentChargeDate(now: Date, courseStartLabel: string | null | undefined) {
+  const courseStart = parseSpanishDateLabel(courseStartLabel);
+
+  if (!courseStart) {
+    return addMonthsUtc(now, 1);
+  }
+
+  const anchorDay = courseStart.getUTCDate();
+  const firstRenewal = addMonthsUtc(courseStart, 1);
+  const currentMonthAnchor = buildUtcAnchor(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    anchorDay,
+  );
+  const nextMonthlyAnchor =
+    now.getTime() < currentMonthAnchor.getTime()
+      ? currentMonthAnchor
+      : buildUtcAnchor(now.getUTCFullYear(), now.getUTCMonth() + 1, anchorDay);
+
+  return nextMonthlyAnchor.getTime() > firstRenewal.getTime() ? nextMonthlyAnchor : firstRenewal;
+}
+
 async function findOrCreateCustomer(stripe: Stripe, email: string, userId: string) {
   const existing = await stripe.customers.list({ email, limit: 1 });
   const customer = existing.data[0];
@@ -101,6 +188,16 @@ export async function POST(request: Request) {
 
     if (!courseId) {
       return NextResponse.json({ error: "Payment metadata missing course" }, { status: 400 });
+    }
+
+    const { data: course } = await admin
+      .from("courses")
+      .select("id, start_date_label")
+      .eq("id", courseId)
+      .maybeSingle();
+
+    if (!course) {
+      return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
     let magicLink: string | null = null;
@@ -262,8 +359,14 @@ export async function POST(request: Request) {
         subscriptionId = matchingSubscription.id;
       } else {
         const now = new Date();
-        const trialEnd = Math.floor(addMonths(now, 1).getTime() / 1000);
-        const cancelAt = Math.floor(addMonths(now, monthsTotal).getTime() / 1000);
+        const firstRenewalDate = resolveNextInstallmentChargeDate(
+          now,
+          course.start_date_label,
+        );
+        const trialEnd = Math.floor(firstRenewalDate.getTime() / 1000);
+        const cancelAt = Math.floor(
+          addMonthsUtc(firstRenewalDate, Math.max(monthsTotal - 1, 0)).getTime() / 1000,
+        );
 
         const subscription = await stripe.subscriptions.create({
           customer: customerId,
