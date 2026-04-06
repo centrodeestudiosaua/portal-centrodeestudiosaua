@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { 
   Scale, 
   GraduationCap, 
@@ -26,9 +26,103 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { StripeElementsCheckout } from "@/components/portal/stripe-elements-checkout";
+import type { PurchaseOption } from "@/lib/portal/data";
+
+const COURSE_ID = "4ff94e83-7bff-4cc1-80a2-f7a99d2da4c5";
+const COURSE_SLUG = "diplomado-en-amparo";
+
+const PURCHASE_OPTIONS: Record<string, PurchaseOption> = {
+  "pago-unico": {
+    code: "one_time",
+    label: "Pago unico",
+    description: "$14,800.00",
+    priceId: "price_1T9fW12KWOdMBeNKuOCgyOae",
+    mode: "payment",
+  },
+  "3-meses": {
+    code: "three_month",
+    label: "3 mensualidades",
+    description: "$4,933.34",
+    priceId: "price_1TDwUY2KWOdMBeNKavY4yyOd",
+    mode: "subscription",
+  },
+  "6-meses": {
+    code: "monthly",
+    label: "6 mensualidades",
+    description: "$2,466.67",
+    priceId: "price_1TDwUZ2KWOdMBeNKOWlqgSTA",
+    mode: "subscription",
+  },
+};
+
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function onlyDigits(value: string) {
+  return value.replace(/\D/g, "").slice(0, 10);
+}
+
+function formatPhone(value: string) {
+  const digits = onlyDigits(value);
+
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(value));
+}
+
+function isValidPhone(value: string) {
+  return onlyDigits(value).length === 10;
+}
+
+function getPlanSummary(option: PurchaseOption) {
+  if (option.code === "one_time") {
+    return {
+      amount: option.description,
+      chargeSummary: `Se cobrara hoy ${option.description} en un solo pago para activar tu acceso.`,
+      submitLabel: `Pagar ${option.description}`,
+      title: "Pago unico",
+    };
+  }
+
+  if (option.code === "three_month") {
+    return {
+      amount: option.description,
+      chargeSummary: `Se cobrara hoy la primera mensualidad de ${option.description}. Los 2 cargos restantes quedaran programados conforme al calendario del diplomado.`,
+      submitLabel: `Pagar ${option.description}`,
+      title: "3 mensualidades",
+    };
+  }
+
+  return {
+    amount: option.description,
+    chargeSummary: `Se cobrara hoy la primera mensualidad de ${option.description}. Los pagos restantes quedaran programados conforme al calendario del diplomado.`,
+    submitLabel: `Pagar ${option.description}`,
+    title: "6 mensualidades",
+  };
+}
 
 export default function DiplomadoEnAmparoPage() {
   const [paymentOption, setPaymentOption] = useState("6-meses");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [showPayment, setShowPayment] = useState(false);
+
+  const selectedOption = useMemo(
+    () => PURCHASE_OPTIONS[paymentOption] ?? PURCHASE_OPTIONS["6-meses"],
+    [paymentOption],
+  );
+  const normalizedEmail = normalizeEmail(email);
+  const formattedPhone = formatPhone(phone);
+  const canContinue =
+    Boolean(name.trim()) && isValidEmail(normalizedEmail) && isValidPhone(phone);
+  const selectedPlan = getPlanSummary(selectedOption);
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
@@ -1604,26 +1698,111 @@ export default function DiplomadoEnAmparoPage() {
 
               <h4 className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-5">Datos del Estudiante</h4>
               
-              <form onSubmit={(e) => e.preventDefault()} className="w-full">
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (canContinue) {
+                    setShowPayment(true);
+                  }
+                }}
+                className="w-full"
+              >
                 <div className="space-y-4 mb-6">
                   <div>
                     <Label htmlFor="name" className="text-xs font-bold text-slate-600 mb-1.5 block uppercase tracking-wider">Nombre Completo *</Label>
-                    <Input id="name" name="name" type="text" required placeholder="Nombre(s) y Apellidos" className="h-11 !bg-white border-slate-200 focus-visible:ring-[#9B1D20] !text-black placeholder:text-slate-400" />
+                    <Input
+                      id="name"
+                      name="name"
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      placeholder="Nombre(s) y Apellidos"
+                      autoComplete="name"
+                      className="h-11 !bg-white border-slate-200 focus-visible:ring-[#9B1D20] !text-black placeholder:text-slate-400"
+                    />
                   </div>
                   <div>
                     <Label htmlFor="email" className="text-xs font-bold text-slate-600 mb-1.5 block uppercase tracking-wider">Correo Electrónico *</Label>
-                    <Input id="email" name="email" type="email" required placeholder="tu@correo.com" className="h-11 !bg-white border-slate-200 focus-visible:ring-[#9B1D20] !text-black placeholder:text-slate-400" />
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(event) => setEmail(normalizeEmail(event.target.value))}
+                      placeholder="tu@correo.com"
+                      autoComplete="email"
+                      inputMode="email"
+                      className="h-11 !bg-white border-slate-200 focus-visible:ring-[#9B1D20] !text-black placeholder:text-slate-400"
+                    />
+                    {email && !isValidEmail(normalizedEmail) ? (
+                      <p className="mt-2 text-xs text-[#9B1D20]">Ingresa un correo valido.</p>
+                    ) : null}
                   </div>
                   <div>
                     <Label htmlFor="phone" className="text-xs font-bold text-slate-600 mb-1.5 block uppercase tracking-wider">Teléfono *</Label>
-                    <Input id="phone" name="phone" type="tel" pattern="^[0-9\-\+\s\(\)]+$" required placeholder="(000) 000-0000" title="Ingresa un número de teléfono válido" className="h-11 !bg-white border-slate-200 focus-visible:ring-[#9B1D20] !text-black placeholder:text-slate-400" />
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      required
+                      value={formattedPhone}
+                      onChange={(event) => setPhone(onlyDigits(event.target.value))}
+                      placeholder="(664) 800-0011"
+                      autoComplete="tel"
+                      inputMode="numeric"
+                      maxLength={14}
+                      className="h-11 !bg-white border-slate-200 focus-visible:ring-[#9B1D20] !text-black placeholder:text-slate-400"
+                    />
+                    {phone && !isValidPhone(phone) ? (
+                      <p className="mt-2 text-xs text-[#9B1D20]">Ingresa un telefono de 10 digitos.</p>
+                    ) : null}
                   </div>
                 </div>
 
-                <button type="submit" className="w-full bg-[#CA8A8B] hover:bg-[#B77A7B] text-white font-bold tracking-wider text-xs uppercase py-4 rounded-md transition-colors shadow-sm mb-12">
-                  Completa tus datos para pagar
+                <button
+                  type="submit"
+                  disabled={!canContinue}
+                  className="w-full bg-[#CA8A8B] hover:bg-[#B77A7B] text-white font-bold tracking-wider text-xs uppercase py-4 rounded-md transition-colors shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {showPayment
+                    ? `Actualizar datos del cobro ${selectedPlan.amount}`
+                    : `Completa tus datos para pagar ${selectedPlan.amount}`}
                 </button>
               </form>
+
+              {showPayment ? (
+                <div className="mt-6 space-y-4 border-t border-slate-100 pt-6">
+                  <div className="rounded-2xl border border-[#9B1D20]/10 bg-red-50/40 px-4 py-4">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9B1D20]">
+                      Resumen del cobro
+                    </p>
+                    <div className="mt-3 flex items-end justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{selectedPlan.title}</p>
+                        <p className="mt-1 text-sm leading-6 text-slate-600">
+                          {selectedPlan.chargeSummary}
+                        </p>
+                      </div>
+                      <p className="text-3xl font-bold text-slate-900">{selectedPlan.amount}</p>
+                    </div>
+                  </div>
+
+                  <StripeElementsCheckout
+                    courseId={COURSE_ID}
+                    courseSlug={COURSE_SLUG}
+                    option={selectedOption}
+                    anonymousCustomer={{
+                      name: name.trim(),
+                      email: normalizedEmail,
+                      phone: formattedPhone,
+                    }}
+                    chargeSummary={selectedPlan.chargeSummary}
+                    submitLabel={selectedPlan.submitLabel}
+                  />
+                </div>
+              ) : null}
 
               <div className="border-t border-slate-100 pt-8">
                 <h4 className="text-xs font-bold text-slate-800 tracking-widest uppercase text-center mb-6">Incluido en su inversión:</h4>

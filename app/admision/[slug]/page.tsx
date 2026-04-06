@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { PublicAdmissionPage } from "@/components/portal/public-admission-page";
 import { getPublicAdmissionCourse } from "@/lib/portal/data";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdmissionPage({
   params,
 }: {
