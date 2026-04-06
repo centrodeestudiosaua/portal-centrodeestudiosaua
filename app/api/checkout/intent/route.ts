@@ -3,22 +3,15 @@ import { createClient as createAdminClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 
 import { createClient } from "@/lib/supabase/server";
+import { isValidE164Phone, isValidFullName } from "@/lib/phone";
 import { getStripeServerClient } from "@/lib/stripe";
 
 function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
 }
 
-function normalizePhone(value: string) {
-  return value.replace(/\D/g, "");
-}
-
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
-
-function isValidPhone(value: string) {
-  return value.length === 10;
 }
 
 async function findExistingStudentIdByEmail(
@@ -112,7 +105,7 @@ export async function POST(request: Request) {
     const purchaseOption = body.purchaseOption?.trim() || "one_time";
     const customerName = body.customerName?.trim() ?? "";
     const customerEmail = normalizeEmail(body.customerEmail ?? "");
-    const customerPhone = normalizePhone(body.customerPhone ?? "");
+    const customerPhone = (body.customerPhone ?? "").trim();
     const monthsTotal =
       purchaseOption === "three_month" ? 3 : purchaseOption === "monthly" ? 6 : 1;
 
@@ -153,9 +146,16 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!resolvedUserId && !isValidPhone(customerPhone)) {
+    if (!resolvedUserId && !isValidFullName(customerName)) {
       return NextResponse.json(
-        { error: "Invalid anonymous customer phone" },
+        { error: "Ingresa nombre y apellidos reales" },
+        { status: 400 },
+      );
+    }
+
+    if (!resolvedUserId && !isValidE164Phone(customerPhone)) {
+      return NextResponse.json(
+        { error: "Ingresa un telefono valido con lada internacional" },
         { status: 400 },
       );
     }

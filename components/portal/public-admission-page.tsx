@@ -6,29 +6,22 @@ import { CalendarDays, Clock3, ShieldCheck } from "lucide-react";
 
 import { StripeElementsCheckout } from "@/components/portal/stripe-elements-checkout";
 import type { PublicAdmissionCourse, PurchaseOption } from "@/lib/portal/data";
+import {
+  PHONE_COUNTRIES,
+  formatLocalPhone,
+  getPhoneCountry,
+  isValidFullName,
+  isValidLocalPhone,
+  normalizeLocalPhone,
+  toE164Phone,
+} from "@/lib/phone";
 
 function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
 }
 
-function onlyDigits(value: string) {
-  return value.replace(/\D/g, "").slice(0, 10);
-}
-
-function formatPhone(value: string) {
-  const digits = onlyDigits(value).slice(0, 10);
-
-  if (digits.length <= 3) return digits;
-  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-}
-
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(value));
-}
-
-function isValidPhone(value: string) {
-  return onlyDigits(value).length === 10;
 }
 
 function formatCurrency(value: number | null) {
@@ -92,6 +85,7 @@ export function PublicAdmissionPage({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [phoneCountry, setPhoneCountry] = useState("MX");
   const [showPayment, setShowPayment] = useState(false);
 
   const selectedOption = useMemo(
@@ -104,9 +98,13 @@ export function PublicAdmissionPage({
   if (!selectedOption) return null;
 
   const normalizedEmail = normalizeEmail(email);
-  const formattedPhone = formatPhone(phone);
+  const selectedPhoneCountry = getPhoneCountry(phoneCountry);
+  const formattedPhone = formatLocalPhone(phone, phoneCountry);
+  const canonicalPhone = toE164Phone(phone, phoneCountry);
   const canContinue =
-    Boolean(name.trim()) && isValidEmail(email) && isValidPhone(phone);
+    isValidFullName(name) &&
+    isValidEmail(email) &&
+    isValidLocalPhone(phone, phoneCountry);
   const selectedPlan = getPlanSummary(course, selectedOption);
 
   return (
@@ -248,6 +246,11 @@ export function PublicAdmissionPage({
                           required
                           className="w-full rounded-[16px] border border-border bg-white px-4 py-4 text-sm text-primary outline-none transition-colors focus:border-accent"
                         />
+                        {name && !isValidFullName(name) ? (
+                          <p className="text-sm text-red-700">
+                            Captura nombre y apellidos reales.
+                          </p>
+                        ) : null}
                       </label>
                       <label className="block space-y-2">
                         <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
@@ -273,20 +276,36 @@ export function PublicAdmissionPage({
                         <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                           Telefono
                         </span>
-                        <input
-                          value={formattedPhone}
-                          onChange={(event) => setPhone(onlyDigits(event.target.value))}
-                          placeholder="(664) 800-0011"
-                          type="tel"
-                          autoComplete="tel"
-                          inputMode="numeric"
-                          maxLength={14}
-                          required
-                          className="w-full rounded-[16px] border border-border bg-white px-4 py-4 text-sm text-primary outline-none transition-colors focus:border-accent"
-                        />
-                        {phone && !isValidPhone(phone) ? (
+                        <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-3">
+                          <select
+                            value={phoneCountry}
+                            onChange={(event) => setPhoneCountry(event.target.value)}
+                            className="w-full rounded-[16px] border border-border bg-white px-3 py-4 text-sm font-semibold text-primary outline-none transition-colors focus:border-accent"
+                          >
+                            {PHONE_COUNTRIES.map((country) => (
+                              <option key={country.code} value={country.code}>
+                                {country.flag} {country.dialCode}
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            value={formattedPhone}
+                            onChange={(event) =>
+                              setPhone(normalizeLocalPhone(event.target.value, phoneCountry))
+                            }
+                            placeholder={selectedPhoneCountry.placeholder}
+                            type="tel"
+                            autoComplete="tel-national"
+                            inputMode="numeric"
+                            maxLength={selectedPhoneCountry.localLength + 4}
+                            required
+                            className="w-full rounded-[16px] border border-border bg-white px-4 py-4 text-sm text-primary outline-none transition-colors focus:border-accent"
+                          />
+                        </div>
+                        {phone && !isValidLocalPhone(phone, phoneCountry) ? (
                           <p className="text-sm text-red-700">
-                            Ingresa un telefono de 10 digitos.
+                            Ingresa un telefono valido para {selectedPhoneCountry.label}. Debe tener{" "}
+                            {selectedPhoneCountry.localLength} digitos.
                           </p>
                         ) : null}
                       </label>
@@ -331,7 +350,7 @@ export function PublicAdmissionPage({
                             anonymousCustomer={{
                               name,
                               email: normalizedEmail,
-                              phone: formattedPhone,
+                              phone: canonicalPhone,
                             }}
                             chargeSummary={selectedPlan.chargeSummary}
                             submitLabel={selectedPlan.submitLabel}

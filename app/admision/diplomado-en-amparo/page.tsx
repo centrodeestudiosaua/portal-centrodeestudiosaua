@@ -26,6 +26,15 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import {
+  PHONE_COUNTRIES,
+  formatLocalPhone,
+  getPhoneCountry,
+  isValidFullName,
+  isValidLocalPhone,
+  normalizeLocalPhone,
+  toE164Phone,
+} from "@/lib/phone";
 import { StripeElementsCheckout } from "@/components/portal/stripe-elements-checkout";
 import type { PurchaseOption } from "@/lib/portal/data";
 
@@ -60,24 +69,8 @@ function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
 }
 
-function onlyDigits(value: string) {
-  return value.replace(/\D/g, "").slice(0, 10);
-}
-
-function formatPhone(value: string) {
-  const digits = onlyDigits(value);
-
-  if (digits.length <= 3) return digits;
-  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-}
-
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(value));
-}
-
-function isValidPhone(value: string) {
-  return onlyDigits(value).length === 10;
 }
 
 function getPlanSummary(option: PurchaseOption) {
@@ -112,6 +105,7 @@ export default function DiplomadoEnAmparoPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [phoneCountry, setPhoneCountry] = useState("MX");
   const [showPayment, setShowPayment] = useState(false);
 
   const selectedOption = useMemo(
@@ -119,9 +113,14 @@ export default function DiplomadoEnAmparoPage() {
     [paymentOption],
   );
   const normalizedEmail = normalizeEmail(email);
-  const formattedPhone = formatPhone(phone);
+  const selectedPhoneCountry = getPhoneCountry(phoneCountry);
+  const normalizedLocalPhone = normalizeLocalPhone(phone, phoneCountry);
+  const formattedPhone = formatLocalPhone(phone, phoneCountry);
+  const canonicalPhone = toE164Phone(phone, phoneCountry);
   const canContinue =
-    Boolean(name.trim()) && isValidEmail(normalizedEmail) && isValidPhone(phone);
+    isValidFullName(name) &&
+    isValidEmail(normalizedEmail) &&
+    isValidLocalPhone(phone, phoneCountry);
   const selectedPlan = getPlanSummary(selectedOption);
 
   useEffect(() => {
@@ -1724,6 +1723,11 @@ export default function DiplomadoEnAmparoPage() {
                       autoComplete="name"
                       className="h-11 !bg-white border-slate-200 focus-visible:ring-[#9B1D20] !text-black placeholder:text-slate-400"
                     />
+                    {name && !isValidFullName(name) ? (
+                      <p className="mt-2 text-xs text-[#9B1D20]">
+                        Captura nombre y apellidos reales.
+                      </p>
+                    ) : null}
                   </div>
                   <div>
                     <Label htmlFor="email" className="text-xs font-bold text-slate-600 mb-1.5 block uppercase tracking-wider">Correo Electrónico *</Label>
@@ -1745,21 +1749,39 @@ export default function DiplomadoEnAmparoPage() {
                   </div>
                   <div>
                     <Label htmlFor="phone" className="text-xs font-bold text-slate-600 mb-1.5 block uppercase tracking-wider">Teléfono *</Label>
-                    <Input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      required
-                      value={formattedPhone}
-                      onChange={(event) => setPhone(onlyDigits(event.target.value))}
-                      placeholder="(664) 800-0011"
-                      autoComplete="tel"
-                      inputMode="numeric"
-                      maxLength={14}
-                      className="h-11 !bg-white border-slate-200 focus-visible:ring-[#9B1D20] !text-black placeholder:text-slate-400"
-                    />
-                    {phone && !isValidPhone(phone) ? (
-                      <p className="mt-2 text-xs text-[#9B1D20]">Ingresa un telefono de 10 digitos.</p>
+                    <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-3">
+                      <select
+                        value={phoneCountry}
+                        onChange={(event) => setPhoneCountry(event.target.value)}
+                        className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition-colors focus:border-[#9B1D20]"
+                      >
+                        {PHONE_COUNTRIES.map((country) => (
+                          <option key={country.code} value={country.code}>
+                            {country.flag} {country.dialCode}
+                          </option>
+                        ))}
+                      </select>
+                      <Input
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        required
+                        value={formattedPhone}
+                        onChange={(event) =>
+                          setPhone(normalizeLocalPhone(event.target.value, phoneCountry))
+                        }
+                        placeholder={selectedPhoneCountry.placeholder}
+                        autoComplete="tel-national"
+                        inputMode="numeric"
+                        maxLength={selectedPhoneCountry.localLength + 4}
+                        className="h-11 !bg-white border-slate-200 focus-visible:ring-[#9B1D20] !text-black placeholder:text-slate-400"
+                      />
+                    </div>
+                    {phone && !isValidLocalPhone(phone, phoneCountry) ? (
+                      <p className="mt-2 text-xs text-[#9B1D20]">
+                        Ingresa un telefono valido para {selectedPhoneCountry.label}. Debe tener{" "}
+                        {selectedPhoneCountry.localLength} digitos.
+                      </p>
                     ) : null}
                   </div>
                 </div>
@@ -1799,7 +1821,7 @@ export default function DiplomadoEnAmparoPage() {
                     anonymousCustomer={{
                       name: name.trim(),
                       email: normalizedEmail,
-                      phone: formattedPhone,
+                      phone: canonicalPhone,
                     }}
                     chargeSummary={selectedPlan.chargeSummary}
                     submitLabel={selectedPlan.submitLabel}
