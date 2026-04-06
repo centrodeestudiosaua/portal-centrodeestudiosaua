@@ -84,6 +84,7 @@ export function PublicAdmissionPage({
   );
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [confirmEmail, setConfirmEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [phoneCountry, setPhoneCountry] = useState("MX");
   const [showPayment, setShowPayment] = useState(false);
@@ -98,12 +99,17 @@ export function PublicAdmissionPage({
   if (!selectedOption) return null;
 
   const normalizedEmail = normalizeEmail(email);
+  const normalizedConfirmEmail = normalizeEmail(confirmEmail);
   const selectedPhoneCountry = getPhoneCountry(phoneCountry);
   const formattedPhone = formatLocalPhone(phone, phoneCountry);
   const canonicalPhone = toE164Phone(phone, phoneCountry);
+  const emailsMatch =
+    normalizedEmail.length > 0 && normalizedEmail === normalizedConfirmEmail;
   const canContinue =
     isValidFullName(name) &&
-    isValidEmail(email) &&
+    isValidEmail(normalizedEmail) &&
+    isValidEmail(normalizedConfirmEmail) &&
+    emailsMatch &&
     isValidLocalPhone(phone, phoneCountry);
   const selectedPlan = getPlanSummary(course, selectedOption);
 
@@ -266,9 +272,39 @@ export function PublicAdmissionPage({
                           required
                           className="w-full rounded-[16px] border border-border bg-white px-4 py-4 text-sm text-primary outline-none transition-colors focus:border-accent"
                         />
-                        {email && !isValidEmail(email) ? (
+                        {email && !isValidEmail(normalizedEmail) ? (
                           <p className="text-sm text-red-700">
                             Ingresa un correo valido.
+                          </p>
+                        ) : null}
+                      </label>
+                      <label className="block space-y-2">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                          Confirmar correo electronico
+                        </span>
+                        <input
+                          value={confirmEmail}
+                          onChange={(event) =>
+                            setConfirmEmail(normalizeEmail(event.target.value))
+                          }
+                          placeholder="Repite tu correo"
+                          type="email"
+                          autoComplete="email"
+                          inputMode="email"
+                          required
+                          className="w-full rounded-[16px] border border-border bg-white px-4 py-4 text-sm text-primary outline-none transition-colors focus:border-accent"
+                        />
+                        {confirmEmail && !isValidEmail(normalizedConfirmEmail) ? (
+                          <p className="text-sm text-red-700">
+                            Ingresa un correo valido.
+                          </p>
+                        ) : null}
+                        {confirmEmail &&
+                        isValidEmail(normalizedEmail) &&
+                        isValidEmail(normalizedConfirmEmail) &&
+                        !emailsMatch ? (
+                          <p className="text-sm text-red-700">
+                            Los correos no coinciden exactamente.
                           </p>
                         ) : null}
                       </label>

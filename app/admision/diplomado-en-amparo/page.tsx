@@ -104,6 +104,7 @@ export default function DiplomadoEnAmparoPage() {
   const [paymentOption, setPaymentOption] = useState("6-meses");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [confirmEmail, setConfirmEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [phoneCountry, setPhoneCountry] = useState("MX");
   const [showPayment, setShowPayment] = useState(false);
@@ -113,13 +114,18 @@ export default function DiplomadoEnAmparoPage() {
     [paymentOption],
   );
   const normalizedEmail = normalizeEmail(email);
+  const normalizedConfirmEmail = normalizeEmail(confirmEmail);
   const selectedPhoneCountry = getPhoneCountry(phoneCountry);
   const normalizedLocalPhone = normalizeLocalPhone(phone, phoneCountry);
   const formattedPhone = formatLocalPhone(phone, phoneCountry);
   const canonicalPhone = toE164Phone(phone, phoneCountry);
+  const emailsMatch =
+    normalizedEmail.length > 0 && normalizedEmail === normalizedConfirmEmail;
   const canContinue =
     isValidFullName(name) &&
     isValidEmail(normalizedEmail) &&
+    isValidEmail(normalizedConfirmEmail) &&
+    emailsMatch &&
     isValidLocalPhone(phone, phoneCountry);
   const selectedPlan = getPlanSummary(selectedOption);
 
@@ -1745,6 +1751,32 @@ export default function DiplomadoEnAmparoPage() {
                     />
                     {email && !isValidEmail(normalizedEmail) ? (
                       <p className="mt-2 text-xs text-[#9B1D20]">Ingresa un correo valido.</p>
+                    ) : null}
+                  </div>
+                  <div>
+                    <Label htmlFor="confirm-email" className="text-xs font-bold text-slate-600 mb-1.5 block uppercase tracking-wider">Confirmar Correo Electrónico *</Label>
+                    <Input
+                      id="confirm-email"
+                      name="confirm-email"
+                      type="email"
+                      required
+                      value={confirmEmail}
+                      onChange={(event) => setConfirmEmail(normalizeEmail(event.target.value))}
+                      placeholder="Repite tu correo"
+                      autoComplete="email"
+                      inputMode="email"
+                      className="h-11 !bg-white border-slate-200 focus-visible:ring-[#9B1D20] !text-black placeholder:text-slate-400"
+                    />
+                    {confirmEmail && !isValidEmail(normalizedConfirmEmail) ? (
+                      <p className="mt-2 text-xs text-[#9B1D20]">Ingresa un correo valido.</p>
+                    ) : null}
+                    {confirmEmail &&
+                    isValidEmail(normalizedEmail) &&
+                    isValidEmail(normalizedConfirmEmail) &&
+                    !emailsMatch ? (
+                      <p className="mt-2 text-xs text-[#9B1D20]">
+                        Los correos no coinciden exactamente.
+                      </p>
                     ) : null}
                   </div>
                   <div>
