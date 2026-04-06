@@ -591,12 +591,16 @@ async function getAuthenticatedPortalUser(): Promise<PortalUser | null> {
   };
 }
 
-function createAdminPortalClient() {
+async function createAdminPortalClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error("Missing Supabase admin configuration");
+  if (!supabaseUrl) {
+    throw new Error("Missing Supabase URL configuration");
+  }
+
+  if (!serviceRoleKey) {
+    return createClient();
   }
 
   return createSupabaseClient(supabaseUrl, serviceRoleKey, {
@@ -616,7 +620,7 @@ export async function getDashboardData(): Promise<{
   const user = await getPortalUser();
   if (!user) return null;
 
-  const supabase = createAdminPortalClient();
+  const supabase = await createAdminPortalClient();
 
   const [{ data: enrollments }, { data: sessions }, { data: certificates }] =
     await Promise.all([
@@ -788,7 +792,7 @@ export async function getCoursesPageData(): Promise<{
   const user = await getPortalUser();
   if (!user) return null;
 
-  const supabase = createAdminPortalClient();
+  const supabase = await createAdminPortalClient();
   const [{ data: coursesData }, { data: enrollments }, { data: progressRows }] =
     await Promise.all([
       supabase
@@ -880,7 +884,7 @@ export async function getPaymentsPageData(): Promise<PaymentsPageData | null> {
   const user = await getPortalUser();
   if (!user) return null;
 
-  const supabase = createAdminPortalClient();
+  const supabase = await createAdminPortalClient();
   const stripe = getStripeServerClient();
 
   const [{ data: enrollments }, { data: paymentRows }] = await Promise.all([
@@ -1141,7 +1145,7 @@ export async function getCourseDetail(slug: string): Promise<CourseDetail | null
   const user = await getPortalUser();
   if (!user) return null;
 
-  const supabase = createAdminPortalClient();
+  const supabase = await createAdminPortalClient();
   const { data: course } = await supabase
     .from("courses")
     .select(
@@ -1263,7 +1267,7 @@ export async function getLessonDetail(lessonId: string): Promise<LessonDetail | 
   const user = await getPortalUser();
   if (!user) return null;
 
-  const supabase = createAdminPortalClient();
+  const supabase = await createAdminPortalClient();
   const { data: lesson } = await supabase
     .from("course_lessons")
     .select(
@@ -1352,7 +1356,7 @@ export async function getLessonDetail(lessonId: string): Promise<LessonDetail | 
 
 export const getPublicAdmissionCourse = cache(
   async (slug: string): Promise<PublicAdmissionCourse | null> => {
-    const supabase = createAdminPortalClient();
+    const supabase = await createAdminPortalClient();
     const { data: course } = await supabase
       .from("courses")
       .select(

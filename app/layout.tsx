@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { EB_Garamond, Lato, Lexend } from "next/font/google";
-import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -42,14 +41,7 @@ export default function RootLayout({
       <body
         className={`${headingFont.variable} ${bodyFont.variable} ${displayFont.variable} font-sans antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+        {children}
       </body>
     </html>
   );
