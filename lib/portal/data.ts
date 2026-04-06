@@ -962,11 +962,6 @@ export async function getPaymentsPageData(): Promise<PaymentsPageData | null> {
       const coursePayments = (paymentRows as PaymentRow[] | null ?? []).filter(
         (payment) => payment.course_id === course.id,
       );
-      const initialPaidPayment =
-        [...coursePayments]
-          .filter((payment) => payment.status === "paid")
-          .sort((a, b) => a.created_at.localeCompare(b.created_at))[0] ?? null;
-      const paidInstallments = coursePayments.filter((payment) => payment.status === "paid").length;
 
       const subscription = stripeSubscriptions
         .filter(
@@ -976,6 +971,23 @@ export async function getPaymentsPageData(): Promise<PaymentsPageData | null> {
             item.status !== "incomplete_expired",
         )
         .sort((a, b) => b.created - a.created)[0];
+
+      const subscriptionCustomerId =
+        subscription && typeof subscription.customer === "string"
+          ? subscription.customer
+          : null;
+
+      const accountPayments = subscriptionCustomerId
+        ? coursePayments.filter(
+            (payment) => payment.stripe_customer_id === subscriptionCustomerId,
+          )
+        : coursePayments.slice(0, 1);
+
+      const initialPaidPayment =
+        [...accountPayments]
+          .filter((payment) => payment.status === "paid")
+          .sort((a, b) => a.created_at.localeCompare(b.created_at))[0] ?? null;
+      const paidInstallments = accountPayments.filter((payment) => payment.status === "paid").length;
 
       const totalInstallments = subscription
         ? Number(subscription.metadata?.months_total ?? course.installments_count ?? 0)
@@ -1003,10 +1015,15 @@ export async function getPaymentsPageData(): Promise<PaymentsPageData | null> {
         .sort((a, b) => b.created - a.created);
 
       const history: PaymentHistoryItem[] = [
-        ...coursePayments.map((payment) => ({
+        ...accountPayments.map((payment, index) => ({
           id: payment.id,
           kind: "payment" as const,
-          title: payment.payment_type === "one_time" ? "Pago del programa" : "Cobro inicial",
+          title:
+            payment.payment_type === "one_time"
+              ? "Pago del programa"
+              : index === 0
+                ? "Cobro inicial del plan"
+                : "Cobro del plan",
           amountLabel: formatCurrencyMxn(payment.amount_mxn),
           statusLabel: paymentStatusLabel(payment.status),
           dateLabel:

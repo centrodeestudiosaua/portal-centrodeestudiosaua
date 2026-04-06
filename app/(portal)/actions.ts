@@ -63,7 +63,9 @@ export async function updateStudentProfile(formData: FormData) {
   const fullName = String(formData.get("full_name") || "").trim();
   const firstName = String(formData.get("first_name") || "").trim();
   const lastName = String(formData.get("last_name") || "").trim();
-  const phone = String(formData.get("phone") || "").trim();
+  const phone = String(formData.get("phone") || "")
+    .replace(/\D/g, "")
+    .slice(0, 10);
 
   const supabase = await createClient();
   const {
@@ -72,6 +74,10 @@ export async function updateStudentProfile(formData: FormData) {
 
   if (!user?.id) {
     redirect("/auth/login");
+  }
+
+  if (phone && phone.length !== 10) {
+    redirect("/settings?error=phone");
   }
 
   await supabase

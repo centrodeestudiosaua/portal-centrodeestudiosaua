@@ -9,7 +9,7 @@ import { getPortalUser } from "@/lib/portal/data";
 export default async function SettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string }>;
 }) {
   await connection();
   const [user, params] = await Promise.all([getPortalUser(), searchParams]);
@@ -33,6 +33,12 @@ export default async function SettingsPage({
       {params.saved === "1" ? (
         <section className="border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
           Tus datos se actualizaron correctamente.
+        </section>
+      ) : null}
+
+      {params.error === "phone" ? (
+        <section className="border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          El telefono debe tener exactamente 10 digitos.
         </section>
       ) : null}
 
@@ -128,6 +134,11 @@ export default async function SettingsPage({
                 id="phone"
                 name="phone"
                 defaultValue={profile?.phone || ""}
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel"
+                maxLength={10}
+                pattern="[0-9]{10}"
                 className="h-11 rounded-xl border-border bg-white text-primary placeholder:text-muted-foreground"
               />
             </div>

@@ -21,6 +21,19 @@ function isValidPhone(value: string) {
   return value.length === 10;
 }
 
+async function findExistingStudentIdByEmail(
+  admin: ReturnType<typeof createPortalAdminClient>,
+  email: string,
+) {
+  const { data: profile } = await admin
+    .from("student_profiles")
+    .select("id")
+    .ilike("email", email)
+    .maybeSingle<{ id: string }>();
+
+  return profile?.id ?? null;
+}
+
 async function findOrCreateCustomer(
   stripe: Stripe,
   input: {
@@ -147,6 +160,9 @@ export async function POST(request: Request) {
       );
     }
 
+    const existingStudentId =
+      resolvedUserId ?? (resolvedUserEmail ? await findExistingStudentIdByEmail(admin, resolvedUserEmail) : null);
+
     const [{ data: course }, { data: enrollment }] = await Promise.all([
       admin
         .from("courses")
@@ -157,11 +173,11 @@ export async function POST(request: Request) {
         .eq("slug", courseSlug)
         .eq("is_published", true)
         .maybeSingle(),
-      resolvedUserId
-        ? supabase
+      existingStudentId
+        ? admin
             .from("enrollments")
             .select("id")
-            .eq("student_id", resolvedUserId)
+            .eq("student_id", existingStudentId)
             .eq("course_id", courseId)
             .in("status", ["active", "completed"])
             .maybeSingle()
@@ -174,7 +190,7 @@ export async function POST(request: Request) {
 
     if (enrollment) {
       return NextResponse.json(
-        { error: "Course already unlocked for this user" },
+        { error: "Este programa ya esta activo para ese correo. Inicia sesion para entrar al portal." },
         { status: 409 },
       );
     }
