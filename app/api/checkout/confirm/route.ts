@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 
+import { renderPortalEmail, sendTransactionalEmail } from "@/lib/email";
 import { getStripeServerClient } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 
@@ -229,7 +230,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
-    let magicLink: string | null = null;
+    let activationRedirectUrl: string | null = null;
 
     if (!resolvedUserId && needsAccountCreation) {
       const { data: listedUsers } = await admin.auth.admin.listUsers({
@@ -282,12 +283,13 @@ export async function POST(request: Request) {
       );
 
       const courseRedirectPath = `/courses/${courseSlug}?checkout=success`;
+      const setPasswordPath = `/auth/update-password?next=${encodeURIComponent(courseRedirectPath)}`;
 
       const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
-        type: "magiclink",
+        type: "recovery",
         email: resolvedUserEmail,
         options: {
-          redirectTo: `${origin}${courseRedirectPath}`,
+          redirectTo: `${origin}${setPasswordPath}`,
         },
       });
 
@@ -307,9 +309,26 @@ export async function POST(request: Request) {
         );
       }
 
-      magicLink = `${origin}/auth/confirm?token_hash=${encodeURIComponent(
+      const activationUrl = `${origin}/auth/confirm?token_hash=${encodeURIComponent(
         hashedToken,
-      )}&type=magiclink&next=${encodeURIComponent(courseRedirectPath)}`;
+      )}&type=recovery&next=${encodeURIComponent(setPasswordPath)}`;
+
+      await sendTransactionalEmail({
+        to: resolvedUserEmail,
+        subject: "Activa tu cuenta del Portal AUA",
+        html: renderPortalEmail({
+          preview: "Tu acceso fue creado. Define tu contrasena para entrar al portal.",
+          title: "Tu acceso fue creado",
+          body:
+            "Hemos activado tu acceso al Portal AUA y tu programa ya esta asignado. Define tu contrasena desde el siguiente boton para entrar con tu correo y continuar con tu diplomado.",
+          ctaLabel: "Activar cuenta",
+          ctaUrl: activationUrl,
+        }),
+      });
+
+      activationRedirectUrl = `${origin}/auth/check-email?mode=activation&email=${encodeURIComponent(
+        resolvedUserEmail,
+      )}`;
     }
 
     const { data: existingPayment } = await admin
@@ -427,7 +446,7 @@ export async function POST(request: Request) {
 
     const redirectUrl = resolvedUserId && !needsAccountCreation
       ? `${origin}/courses/${courseSlug}?checkout=success`
-      : magicLink;
+      : activationRedirectUrl;
 
     if (!redirectUrl) {
       return NextResponse.json(
@@ -440,7 +459,6 @@ export async function POST(request: Request) {
       ok: true,
       enrolled: true,
       subscriptionId,
-      magicLink,
       redirectUrl,
     });
   } catch (error) {

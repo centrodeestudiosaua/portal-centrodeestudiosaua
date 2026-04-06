@@ -4,34 +4,34 @@
 
 @layer base {
   :root {
-    --background: 220 33% 97%;
-    --foreground: 240 34% 16%;
+    --background: 240 34% 16%;
+    --foreground: 0 0% 100%;
     --card: 0 0% 100%;
     --card-foreground: 240 34% 16%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 34% 16%;
-    --primary: 240 34% 16%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 41 48% 57%;
+    --primary-foreground: 240 34% 16%;
     --secondary: 354 69% 34%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 220 25% 94%;
-    --muted-foreground: 220 10% 45%;
-    --accent: 45 81% 49%;
+    --muted: 240 18% 95%;
+    --muted-foreground: 231 12% 42%;
+    --accent: 41 48% 57%;
     --accent-foreground: 240 34% 16%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 220 20% 90%;
-    --input: 220 20% 90%;
-    --ring: 45 81% 49%;
+    --border: 231 24% 88%;
+    --input: 231 24% 88%;
+    --ring: 41 48% 57%;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-    --portal-sidebar: 242 35% 16%;
-    --portal-sidebar-foreground: 220 18% 86%;
-    --portal-sidebar-muted: 220 12% 56%;
+    --radius: 0.75rem;
+    --portal-sidebar: 240 34% 16%;
+    --portal-sidebar-foreground: 0 0% 100%;
+    --portal-sidebar-muted: 220 12% 70%;
     --portal-surface: 0 0% 100%;
     --portal-surface-muted: 220 20% 96%;
     --portal-info: 217 91% 60%;
@@ -44,30 +44,39 @@
     @apply border-border;
   }
   html {
-    @apply bg-background;
+    @apply bg-background scroll-smooth;
   }
   body {
     @apply bg-background text-foreground font-sans;
+    background: #1a1a35;
+    min-height: 100vh;
+    overscroll-behavior-y: none;
   }
   h1,
   h2,
   h3,
   h4 {
-    font-family: var(--font-display), serif;
+    font-family: var(--font-heading), serif;
+    letter-spacing: -0.02em;
   }
 }
 
 @layer components {
   .portal-shell {
-    @apply min-h-screen bg-background;
+    @apply min-h-screen;
+    background:
+      radial-gradient(circle at top left, rgba(197, 160, 89, 0.12), transparent 28%),
+      linear-gradient(180deg, #f7f4ee 0%, #f5f1ea 100%);
   }
 
   .portal-card {
-    @apply rounded-none border border-border bg-card shadow-sm;
+    @apply rounded-xl border border-border bg-card shadow-sm;
+    box-shadow: 0 24px 70px rgba(20, 19, 38, 0.08);
   }
 
   .portal-section-title {
     @apply flex items-center gap-3 text-xl font-bold uppercase tracking-[0.18em] text-primary;
+    font-family: var(--font-display), sans-serif;
   }
 
   .portal-section-title::after {
@@ -80,6 +89,6 @@
   }
 
   .portal-sidebar-link-active {
-    @apply border-r-4 border-accent bg-[rgba(234,179,8,0.12)] text-accent;
+    @apply border-r-4 border-primary bg-[rgba(197,160,89,0.14)] text-primary;
   }
 }

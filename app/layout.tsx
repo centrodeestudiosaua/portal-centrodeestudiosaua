@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { EB_Garamond, Lato, Lexend } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
@@ -13,13 +13,20 @@ export const metadata: Metadata = {
   description: "Portal academico de Centro de Estudios Juridicos AUA",
 };
 
-const inter = Inter({
-  variable: "--font-sans",
+const headingFont = EB_Garamond({
+  variable: "--font-heading",
   display: "swap",
   subsets: ["latin"],
 });
 
-const playfair = Playfair_Display({
+const bodyFont = Lato({
+  variable: "--font-body",
+  display: "swap",
+  subsets: ["latin"],
+  weight: ["100", "300", "400", "700", "900"],
+});
+
+const displayFont = Lexend({
   variable: "--font-display",
   display: "swap",
   subsets: ["latin"],
@@ -31,8 +38,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
-      <body className={`${inter.variable} ${playfair.variable} font-sans antialiased`}>
+    <html lang="es" suppressHydrationWarning className="scroll-smooth">
+      <body
+        className={`${headingFont.variable} ${bodyFont.variable} ${displayFont.variable} font-sans antialiased`}
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

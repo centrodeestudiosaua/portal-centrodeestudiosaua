@@ -51,6 +51,19 @@ export default {
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
         },
+        navy: {
+          deep: "#1a1a35",
+          dark: "#15152b",
+          card: "#232342",
+          border: "#313152",
+        },
+        urgent: "#911a26",
+        cta: "#E85D04",
+      },
+      fontFamily: {
+        serif: ["var(--font-heading)", "serif"],
+        sans: ["var(--font-body)", "sans-serif"],
+        display: ["var(--font-display)", "sans-serif"],
       },
       borderRadius: {
         lg: "var(--radius)",

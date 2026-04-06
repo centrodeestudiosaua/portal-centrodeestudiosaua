@@ -1,10 +1,34 @@
-import { SignUpForm } from "@/components/sign-up-form";
+import Link from "next/link";
 
 export default function Page() {
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm">
-        <SignUpForm />
+    <div className="flex min-h-svh w-full items-center justify-center bg-[#f5f3ee] p-6 md:p-10">
+      <div className="w-full max-w-xl rounded-[28px] border border-[#e7dfd2] bg-white p-10 shadow-[0_24px_70px_rgba(20,19,38,0.08)]">
+        <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-accent">
+          Portal AUA
+        </p>
+        <h1 className="mt-4 text-4xl font-bold text-primary">
+          El registro publico esta desactivado
+        </h1>
+        <p className="mt-4 text-sm leading-8 text-muted-foreground">
+          El acceso al portal se activa despues de una compra validada o por asignacion administrativa.
+          Si ya realizaste tu pago, revisa tu correo para definir tu contrasena de acceso.
+        </p>
+
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <Link
+            href="/auth/login"
+            className="inline-flex items-center justify-center rounded-[14px] bg-primary px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-white"
+          >
+            Ir a iniciar sesion
+          </Link>
+          <Link
+            href="/auth/forgot-password"
+            className="inline-flex items-center justify-center rounded-[14px] border border-border px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-primary"
+          >
+            Recuperar acceso
+          </Link>
+        </div>
       </div>
     </div>
   );
