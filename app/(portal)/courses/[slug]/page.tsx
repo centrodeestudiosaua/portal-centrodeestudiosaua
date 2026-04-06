@@ -26,7 +26,7 @@ export default async function CourseDetailPage({
           <div className="p-8">
             <div className="flex flex-wrap items-center gap-3">
               {course.badgeText ? (
-                <span className="bg-accent/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-accent">
+                <span className="bg-accent/12 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
                   {course.badgeText}
                 </span>
               ) : null}
@@ -45,27 +45,27 @@ export default async function CourseDetailPage({
             </p>
 
             <div className="mt-8 grid gap-4 md:grid-cols-3">
-              <div className="border border-border bg-background p-4">
+              <div className="rounded-xl border border-border bg-navy-deep p-4 text-white">
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
                   Inicio
                 </p>
-                <p className="mt-2 text-sm font-semibold text-primary">
+                <p className="mt-2 text-sm font-semibold text-white">
                   {course.startDateLabel || "Por definir"}
                 </p>
               </div>
-              <div className="border border-border bg-background p-4">
+              <div className="rounded-xl border border-border bg-navy-deep p-4 text-white">
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
                   Modalidad
                 </p>
-                <p className="mt-2 text-sm font-semibold text-primary">
+                <p className="mt-2 text-sm font-semibold text-white">
                   {course.modalityLabel || "Online"}
                 </p>
               </div>
-              <div className="border border-border bg-background p-4">
+              <div className="rounded-xl border border-border bg-navy-deep p-4 text-white">
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
                   Duracion
                 </p>
-                <p className="mt-2 text-sm font-semibold text-primary">
+                <p className="mt-2 text-sm font-semibold text-white">
                   {course.durationLabel || "Programa activo"}
                 </p>
               </div>
@@ -73,7 +73,7 @@ export default async function CourseDetailPage({
 
             <div className="mt-8 flex flex-wrap gap-3">
               {course.isEnrolled ? (
-                <Button asChild className="rounded-none bg-primary px-6 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white hover:bg-secondary">
+                <Button asChild className="rounded-xl bg-accent px-6 py-2 text-xs font-bold uppercase tracking-[0.18em] text-primary hover:bg-[#b7924d]">
                   <Link href={course.lessons[0] ? `/lessons/${course.lessons[0].id}` : "/courses"}>
                     Entrar al curso
                   </Link>
@@ -81,7 +81,7 @@ export default async function CourseDetailPage({
               ) : (
                 <Button
                   asChild
-                  className="rounded-none bg-primary px-6 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white hover:bg-secondary"
+                  className="rounded-xl bg-accent px-6 py-2 text-xs font-bold uppercase tracking-[0.18em] text-primary hover:bg-[#b7924d]"
                 >
                   <Link href={`/checkout?course_slug=${course.slug}`}>
                     Ir al checkout
@@ -135,18 +135,18 @@ export default async function CourseDetailPage({
             {course.lessons.map((lesson) => (
               <article
                 key={lesson.id}
-                className="border border-border bg-background p-4"
+                className="rounded-xl border border-border bg-navy-deep p-4 text-white"
               >
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">
                       Leccion {lesson.sortOrder}
                     </p>
-                    <h3 className="mt-2 text-lg font-bold text-primary">
+                    <h3 className="mt-2 text-lg font-bold text-white">
                       {course.isEnrolled ? (
                         <Link
                           href={`/lessons/${lesson.id}`}
-                          className="hover:text-secondary"
+                          className="hover:text-accent"
                         >
                           {lesson.title}
                         </Link>
@@ -159,11 +159,11 @@ export default async function CourseDetailPage({
                     </p>
                   </div>
                   <div className="w-full max-w-[220px]">
-                    <div className="mb-2 flex items-center justify-between text-xs font-medium text-primary">
+                    <div className="mb-2 flex items-center justify-between text-xs font-medium text-white">
                       <span>Progreso</span>
                       <span>{lesson.progressPercent}%</span>
                     </div>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div className="h-1.5 overflow-hidden rounded-full bg-white/20">
                       <div
                         className="h-full bg-accent"
                         style={{ width: `${lesson.progressPercent}%` }}
@@ -175,7 +175,7 @@ export default async function CourseDetailPage({
                   <div className="mt-4">
                     <Link
                       href={`/lessons/${lesson.id}`}
-                      className="text-xs font-bold uppercase tracking-[0.18em] text-secondary underline underline-offset-4"
+                      className="text-xs font-bold uppercase tracking-[0.18em] text-accent underline underline-offset-4"
                     >
                       Abrir leccion
                     </Link>
@@ -194,7 +194,7 @@ export default async function CourseDetailPage({
                 {course.sessions.map((session) => (
                   <article
                     key={session.id}
-                    className="border-l-2 border-secondary bg-background p-4"
+                    className="rounded-xl border-l-2 border-secondary bg-navy-deep p-4 text-white"
                   >
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
                       {new Intl.DateTimeFormat("es-MX", {
@@ -202,7 +202,7 @@ export default async function CourseDetailPage({
                         timeStyle: "short",
                       }).format(new Date(session.startsAt))}
                     </p>
-                    <h3 className="mt-2 text-base font-bold text-primary">
+                    <h3 className="mt-2 text-base font-bold text-white">
                       {session.title}
                     </h3>
                     <p className="mt-2 text-sm leading-7 text-muted-foreground">
