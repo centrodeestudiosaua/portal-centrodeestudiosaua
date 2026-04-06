@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { 
   Scale, 
   GraduationCap, 
@@ -123,6 +123,10 @@ export default function DiplomadoEnAmparoPage() {
   const canContinue =
     Boolean(name.trim()) && isValidEmail(normalizedEmail) && isValidPhone(phone);
   const selectedPlan = getPlanSummary(selectedOption);
+
+  useEffect(() => {
+    setShowPayment(false);
+  }, [paymentOption]);
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
@@ -262,7 +266,6 @@ export default function DiplomadoEnAmparoPage() {
             <Accordion 
               type="single" 
               collapsible 
-              defaultValue="item-1" 
               className="bg-white rounded-2xl border shadow-sm w-full divide-y divide-slate-100"
               onValueChange={(value) => {
                 if (value) {
@@ -1639,8 +1642,8 @@ export default function DiplomadoEnAmparoPage() {
         </div>
 
         {/* Right Column - Sticky Sidebar */}
-        <div className="w-full lg:w-[460px] xl:w-[480px] shrink-0 relative">
-          <div className="lg:-mt-52 sticky top-8 rounded-3xl overflow-hidden shadow-xl bg-white border border-slate-100 z-30">
+        <div className="w-full lg:w-[460px] xl:w-[480px] shrink-0">
+          <div className="lg:sticky lg:top-6 rounded-3xl overflow-hidden shadow-xl bg-white border border-slate-100">
             {/* Form Header */}
             <div className="bg-[#151528] px-8 py-10 flex flex-col items-center justify-center text-center">
               <span className="inline-flex items-center gap-1.5 border border-[#C5A55D]/30 rounded-full px-3 py-1 mb-6">
