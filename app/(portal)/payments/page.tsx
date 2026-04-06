@@ -64,7 +64,7 @@ export default async function PaymentsPage() {
                       <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
                         Cobro actual
                       </p>
-                      <p className="mt-3 text-[2rem] font-bold leading-none text-primary">
+                      <p className="mt-3 break-words text-[1.7rem] font-bold leading-tight tracking-[-0.03em] text-primary">
                         {account.currentChargeLabel}
                       </p>
                     </div>
