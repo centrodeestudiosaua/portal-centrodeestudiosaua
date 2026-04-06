@@ -117,6 +117,7 @@ export type CourseListItem = {
   lessonsCompleted: number;
   lessonsTotal: number;
   isEnrolled: boolean;
+  priceLabel: string | null;
 };
 
 export type PurchaseOption = {
@@ -791,6 +792,9 @@ export async function getCoursesPageData(): Promise<{
           badge_text,
           duration_label,
           access_type,
+          price_mxn,
+          installment_amount_mxn,
+          installments_count,
           course_lessons ( id )
         `,
         )
@@ -845,6 +849,12 @@ export async function getCoursesPageData(): Promise<{
       lessonsCompleted: progress?.completedCount ?? 0,
       lessonsTotal,
       isEnrolled: enrolledCourseIds.has(course.id),
+      priceLabel:
+        course.access_type === "installments" && course.installment_amount_mxn
+          ? `${formatCurrencyMxn(course.installment_amount_mxn)} / mes x ${course.installments_count ?? 0}`
+          : course.price_mxn
+            ? formatCurrencyMxn(course.price_mxn)
+            : null,
     };
   });
 

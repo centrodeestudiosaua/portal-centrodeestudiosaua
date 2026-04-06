@@ -63,15 +63,15 @@ export default async function DashboardPage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_20%,rgba(255,255,255,0.08),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.04),transparent_55%)]" />
           <div className="relative space-y-8">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-center">
-              <div className="flex h-20 w-28 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-[#1d1b39]">
-                <div className="text-center">
-                  <p className="text-3xl font-bold tracking-[0.18em] text-white">
-                    AUA
-                  </p>
-                  <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.24em] text-white/55">
-                    Centro de Estudios
-                  </p>
-                </div>
+              <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-2xl bg-[#1d1b39]">
+                <Image
+                  src="/logo.png"
+                  alt="Centro de Estudios AUA"
+                  width={114}
+                  height={60}
+                  priority
+                  className="h-auto w-[114px] object-contain"
+                />
               </div>
 
               <div className="space-y-2">

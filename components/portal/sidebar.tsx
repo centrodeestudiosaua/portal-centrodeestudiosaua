@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -27,16 +28,14 @@ export function PortalSidebar({
     <aside className="hidden w-64 shrink-0 bg-[hsl(var(--portal-sidebar))] text-white lg:flex lg:min-h-screen lg:flex-col">
       <div className="border-b border-white/10 px-6 py-7">
         <div className="flex justify-center">
-          <div className="flex w-full max-w-[148px] flex-col items-center rounded-2xl border border-white/8 bg-white/[0.03] px-5 py-4 text-center">
-            <p className="text-3xl font-bold tracking-[0.22em] text-white">
-              AUA
-            </p>
-            <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.24em] leading-tight text-white/58">
-              Centro de Estudios
-              <br />
-              Juridicos
-            </p>
-          </div>
+          <Image
+            src="/logo.png"
+            alt="Centro de Estudios AUA"
+            width={108}
+            height={58}
+            priority
+            className="h-auto w-[108px] object-contain"
+          />
         </div>
       </div>
 

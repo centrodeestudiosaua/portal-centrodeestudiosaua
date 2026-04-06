@@ -24,7 +24,7 @@ export default async function SettingsPage({
         <h1 className="mt-3 text-4xl font-bold text-primary">
           Perfil y configuracion de cuenta
         </h1>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-500">
           Administra tus datos personales y mantén actualizada tu información de
           acceso al portal.
         </p>
@@ -47,7 +47,7 @@ export default async function SettingsPage({
 
           <div className="mt-8 space-y-5">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
                 Nombre completo
               </p>
               <p className="mt-2 text-lg font-semibold text-primary">
@@ -55,7 +55,7 @@ export default async function SettingsPage({
               </p>
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
                 Correo
               </p>
               <p className="mt-2 text-lg font-semibold text-primary">
@@ -63,7 +63,7 @@ export default async function SettingsPage({
               </p>
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
                 Membresia
               </p>
               <p className="mt-2 text-lg font-semibold text-primary">
@@ -71,7 +71,7 @@ export default async function SettingsPage({
               </p>
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
                 Rol
               </p>
               <p className="mt-2 text-lg font-semibold capitalize text-primary">

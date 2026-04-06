@@ -20,7 +20,7 @@ export function PortalTopbar({
       <div className="hidden lg:block" />
 
       <div className="ml-auto flex items-center gap-3">
-        <span className="hidden text-sm text-muted-foreground sm:inline">
+        <span className="hidden text-sm text-slate-500 sm:inline">
           {email || "alumno@centrodeestudiosaua.com"}
         </span>
         <LogoutButton
