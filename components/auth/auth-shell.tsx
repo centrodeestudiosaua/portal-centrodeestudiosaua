@@ -48,10 +48,12 @@ export function AuthShell({
               className="relative mx-auto"
               style={{ width: "190px", height: "auto" }}
             />
-            <h1 className="relative mt-8 font-display text-[2.2rem] font-bold leading-none tracking-[-0.02em]">
+            <h1 className="relative mt-8 font-sans text-[1.85rem] font-bold leading-none tracking-[-0.01em] sm:text-[2rem]">
               {title}
             </h1>
-            <p className="relative mt-3 text-[15px] leading-6 text-white/70">{subtitle}</p>
+            <p className="relative mt-3 font-sans text-[13px] leading-5 text-white/68">
+              {subtitle}
+            </p>
           </div>
 
           <div className="px-6 py-7 sm:px-7">{children}</div>
