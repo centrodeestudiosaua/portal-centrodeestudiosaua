@@ -8,6 +8,10 @@ function getBaseUrl() {
   return process.env.NEXT_PUBLIC_SITE_URL || "https://portal-centrodeestudiosaua.vercel.app";
 }
 
+function getLogoUrl() {
+  return `${getBaseUrl().replace(/\/$/, "")}/logo.png`;
+}
+
 export function renderPortalEmail(input: {
   preview: string;
   title: string;
@@ -33,8 +37,7 @@ export function renderPortalEmail(input: {
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #e7dfd2;border-radius:24px;overflow:hidden;">
                 <tr>
                   <td style="background:#1a1a35;padding:28px 32px;text-align:center;">
-                    <div style="font-size:34px;font-weight:800;letter-spacing:0.18em;color:#e5c56a;">AUA</div>
-                    <div style="margin-top:8px;font-size:11px;font-weight:700;letter-spacing:0.24em;text-transform:uppercase;color:#ffffffb3;">Centro de Estudios Juridicos</div>
+                    <img src="${getLogoUrl()}" alt="AUA Centro de Estudios Juridicos" width="190" style="display:block;margin:0 auto;height:auto;max-width:190px;" />
                   </td>
                 </tr>
                 <tr>
