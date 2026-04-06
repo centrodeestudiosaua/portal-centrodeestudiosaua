@@ -57,9 +57,9 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto max-w-[980px] space-y-7">
       <section className="overflow-hidden rounded-[28px] border border-white/8 bg-[#232342] text-white shadow-[0_28px_80px_rgba(18,16,37,0.18)]">
-        <div className="relative px-8 py-8 sm:px-10">
+        <div className="relative px-7 py-7 sm:px-8">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_20%,rgba(255,255,255,0.08),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.04),transparent_55%)]" />
           <div className="relative space-y-8">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-center">
@@ -89,14 +89,14 @@ export default async function DashboardPage() {
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-3">
               {heroStats.map((stat) => {
                 const Icon = stat.icon;
 
                 return (
                   <article
                     key={stat.label}
-                    className="rounded-2xl border border-white/8 bg-white/4 px-5 py-4 backdrop-blur-sm"
+                    className="rounded-2xl border border-white/8 bg-white/4 px-4 py-4 backdrop-blur-sm"
                   >
                     <div className="flex items-center gap-4">
                       <div
@@ -119,7 +119,7 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <section className="space-y-5">
+      <section className="space-y-4">
         <div className="flex items-center gap-3">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-secondary/10 text-secondary">
             <CalendarClock className="h-4 w-4" />
@@ -128,11 +128,11 @@ export default async function DashboardPage() {
         </div>
 
         {upcomingClasses.length ? (
-          <div className="grid gap-5 xl:grid-cols-3">
+          <div className="grid gap-4 xl:grid-cols-3">
             {upcomingClasses.map((session, index) => (
               <article
                 key={session.id}
-                className="rounded-2xl border border-border bg-white p-5 shadow-[0_16px_50px_rgba(24,20,43,0.06)]"
+                className="rounded-2xl border border-border bg-white p-4 shadow-[0_16px_50px_rgba(24,20,43,0.06)]"
               >
                 <p className="inline-flex rounded-md bg-secondary/8 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-secondary">
                   Sesión {index + 1}
@@ -156,7 +156,7 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      <section className="space-y-5">
+      <section className="space-y-4">
         <div className="flex items-center gap-3">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/12 text-accent">
             <BookOpen className="h-4 w-4" />
@@ -165,14 +165,14 @@ export default async function DashboardPage() {
         </div>
 
         {activeCourses.length ? (
-          <div className="space-y-5">
+          <div className="space-y-4">
             {activeCourses.map((course) => (
               <article
                 key={course.id}
                 className="overflow-hidden rounded-2xl border border-border bg-white shadow-[0_20px_60px_rgba(22,18,39,0.07)]"
               >
                 <div className="flex flex-col md:flex-row">
-                  <div className="relative h-64 md:h-auto md:w-[230px]">
+                  <div className="relative h-56 md:h-auto md:w-[200px]">
                     <Image
                       src={course.cover}
                       alt={course.title}
@@ -182,13 +182,13 @@ export default async function DashboardPage() {
                     />
                   </div>
 
-                  <div className="flex flex-1 flex-col p-6 md:p-7">
+                  <div className="flex flex-1 flex-col p-5 md:p-6">
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                       <div className="space-y-3">
                         <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-accent">
                           {course.category}
                         </p>
-                        <h3 className="text-3xl font-bold leading-tight text-primary">
+                        <h3 className="text-[2rem] font-bold leading-tight text-primary">
                           {course.title}
                         </h3>
                       </div>
@@ -202,12 +202,12 @@ export default async function DashboardPage() {
                       ) : null}
                     </div>
 
-                    <p className="mt-4 max-w-4xl text-sm leading-7 text-slate-600">
+                    <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-600">
                       {course.description ||
                         "Programa academico activo con acceso al contenido y clases en vivo."}
                     </p>
 
-                    <div className="mt-6">
+                    <div className="mt-5">
                       <div className="mb-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.2em] text-[#9f8650]">
                         <span>Progreso del curso</span>
                         <span>
@@ -223,7 +223,7 @@ export default async function DashboardPage() {
                       </div>
                     </div>
 
-                    <div className="mt-6 flex flex-col gap-4 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="mt-5 flex flex-col gap-4 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center gap-2 text-sm text-slate-500">
                         <BookOpen className="h-4 w-4 text-[#9f8650]" />
                         <span>{course.lessonsLabel}</span>
