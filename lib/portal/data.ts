@@ -1004,8 +1004,8 @@ export async function getPaymentsPageData(): Promise<PaymentsPageData | null> {
           kind: "invoice" as const,
           title:
             invoice.status === "paid"
-              ? "Renovacion automatica"
-              : "Proximo cobro programado",
+              ? "Cobro del plan"
+              : "Cobro pendiente",
           amountLabel: formatCurrencyMxn(
             typeof invoice.amount_paid === "number" && invoice.amount_paid > 0
               ? invoice.amount_paid / 100
@@ -1083,7 +1083,7 @@ export async function getPaymentsPageData(): Promise<PaymentsPageData | null> {
         nextChargeLabel: nextChargeAt ? formatPortalDate(nextChargeAt) : null,
         startDateLabel: course.start_date_label,
         renewalCadenceLabel:
-          subscription && totalInstallments
+          subscription && totalInstallments && nextChargeAt
             ? `Renovacion automatica cada mes hasta completar ${totalInstallments} cargos`
             : null,
         paidInstallmentsLabel:

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarClock, CircleAlert, CreditCard, ShieldCheck } from "lucide-react";
+import { CircleAlert, CreditCard, ShieldCheck } from "lucide-react";
 import { connection } from "next/server";
 
 import { getPaymentsPageData } from "@/lib/portal/data";
@@ -18,9 +18,9 @@ export default async function PaymentsPage() {
         <h1 className="mt-3 text-4xl font-bold text-primary">
           Cobros, renovaciones y estado de tu plan
         </h1>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
-          Aqui puedes revisar tu inversion actual, proximos cobros automaticos,
-          historial de pagos y el estado de acceso de cada programa.
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-500">
+          Aqui puedes revisar tu inversion actual, historial de pagos y el estado
+          real de acceso de cada programa.
         </p>
       </header>
 
@@ -61,7 +61,7 @@ export default async function PaymentsPage() {
 
                   <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                     <div className="rounded-2xl border border-border bg-white p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
                         Cobro actual
                       </p>
                       <p className="mt-3 text-2xl font-bold text-primary">
@@ -70,7 +70,7 @@ export default async function PaymentsPage() {
                     </div>
 
                     <div className="rounded-2xl border border-border bg-white p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
                         Proximo cobro
                       </p>
                       <p className="mt-3 text-lg font-bold text-primary">
@@ -79,21 +79,21 @@ export default async function PaymentsPage() {
                     </div>
 
                     <div className="rounded-2xl border border-border bg-white p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
                         Progreso del plan
                       </p>
                       <p className="mt-3 text-lg font-bold text-primary">
                         {account.paidInstallmentsLabel || "Pago liquidado"}
                       </p>
                       {account.remainingInstallmentsLabel ? (
-                        <p className="mt-1 text-sm text-muted-foreground">
+                        <p className="mt-1 text-sm text-slate-500">
                           {account.remainingInstallmentsLabel}
                         </p>
                       ) : null}
                     </div>
 
                     <div className="rounded-2xl border border-border bg-white p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
                         Metodo
                       </p>
                       <p className="mt-3 text-lg font-bold text-primary">
@@ -102,7 +102,7 @@ export default async function PaymentsPage() {
                     </div>
                   </div>
 
-                  <div className="mt-6 grid gap-4 lg:grid-cols-2">
+                  <div className={`mt-6 grid gap-4 ${account.renewalCadenceLabel ? "lg:grid-cols-2" : "lg:grid-cols-1"}`}>
                     <div className="rounded-2xl border border-border p-5">
                       <div className="flex items-start gap-3">
                         <ShieldCheck className="mt-0.5 h-5 w-5 text-accent" />
@@ -110,32 +110,33 @@ export default async function PaymentsPage() {
                           <h3 className="text-sm font-bold uppercase tracking-[0.16em] text-primary">
                             Estado del acceso
                           </h3>
-                          <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                          <p className="mt-2 text-sm leading-7 text-slate-500">
                             {account.accessMessage}
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="rounded-2xl border border-border p-5">
-                      <div className="flex items-start gap-3">
-                        <CalendarClock className="mt-0.5 h-5 w-5 text-secondary" />
-                        <div>
-                          <h3 className="text-sm font-bold uppercase tracking-[0.16em] text-primary">
-                            Renovacion automatica
-                          </h3>
-                          <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                            {account.renewalCadenceLabel ||
-                              "Este programa no tiene renovaciones automaticas."}
-                          </p>
-                          {account.startDateLabel ? (
-                            <p className="mt-2 text-sm font-medium text-primary">
-                              Inicio del diplomado: {account.startDateLabel}
+                    {account.renewalCadenceLabel ? (
+                      <div className="rounded-2xl border border-border p-5">
+                        <div className="flex items-start gap-3">
+                          <CreditCard className="mt-0.5 h-5 w-5 text-secondary" />
+                          <div>
+                            <h3 className="text-sm font-bold uppercase tracking-[0.16em] text-primary">
+                              Plan de cobro
+                            </h3>
+                            <p className="mt-2 text-sm leading-7 text-slate-500">
+                              {account.renewalCadenceLabel}
                             </p>
-                          ) : null}
+                            {account.startDateLabel ? (
+                              <p className="mt-2 text-sm font-medium text-primary">
+                                Inicio del diplomado: {account.startDateLabel}
+                              </p>
+                            ) : null}
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    ) : null}
                   </div>
 
                   <div className="mt-8">
@@ -145,7 +146,7 @@ export default async function PaymentsPage() {
                     <div className="mt-4 overflow-hidden rounded-2xl border border-border">
                       <table className="w-full text-left">
                         <thead className="bg-muted/40">
-                          <tr className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                          <tr className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
                             <th className="px-4 py-3">Movimiento</th>
                             <th className="px-4 py-3">Fecha</th>
                             <th className="px-4 py-3">Monto</th>
@@ -157,7 +158,7 @@ export default async function PaymentsPage() {
                             account.history.map((row) => (
                               <tr key={row.id} className="border-t border-border text-sm">
                                 <td className="px-4 py-4 text-primary">{row.title}</td>
-                                <td className="px-4 py-4 text-muted-foreground">{row.dateLabel}</td>
+                                <td className="px-4 py-4 text-slate-500">{row.dateLabel}</td>
                                 <td className="px-4 py-4 font-semibold text-primary">
                                   {row.amountLabel}
                                 </td>
@@ -170,7 +171,7 @@ export default async function PaymentsPage() {
                             ))
                           ) : (
                             <tr className="border-t border-border">
-                              <td colSpan={4} className="px-4 py-6 text-sm text-muted-foreground">
+                              <td colSpan={4} className="px-4 py-6 text-sm text-slate-500">
                                 Aun no hay movimientos visibles para este programa.
                               </td>
                             </tr>
@@ -197,7 +198,7 @@ export default async function PaymentsPage() {
                               <p className="text-sm font-semibold text-primary">
                                 {item.label}
                               </p>
-                              <p className="mt-1 text-sm text-muted-foreground">
+                              <p className="mt-1 text-sm text-slate-500">
                                 {item.dateLabel}
                               </p>
                             </div>
@@ -217,25 +218,10 @@ export default async function PaymentsPage() {
                         </div>
                       ))
                     ) : (
-                      <div className="rounded-2xl border border-dashed border-border bg-white px-4 py-5 text-sm text-muted-foreground">
+                      <div className="rounded-2xl border border-dashed border-border bg-white px-4 py-5 text-sm text-slate-500">
                         No hay renovaciones pendientes para este programa.
                       </div>
                     )}
-                  </div>
-
-                  <div className="mt-6 rounded-2xl border border-navy-border bg-navy-deep p-5">
-                    <div className="flex items-start gap-3">
-                      <CreditCard className="mt-0.5 h-5 w-5 text-accent" />
-                      <div>
-                        <h4 className="text-sm font-bold uppercase tracking-[0.16em] text-white">
-                          Proximamente
-                        </h4>
-                        <p className="mt-2 text-sm leading-7 text-white/70">
-                          La siguiente iteracion conectara esta vista para actualizar
-                          tarjeta, reintentar cobros pendientes y descargar comprobantes.
-                        </p>
-                      </div>
-                    </div>
                   </div>
                 </aside>
               </div>
@@ -250,7 +236,7 @@ export default async function PaymentsPage() {
               <h2 className="text-2xl font-bold text-primary">
                 Aun no hay planes activos en tu cuenta
               </h2>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-500">
                 Cuando completes un pago o una inscripcion en parcialidades,
                 aqui aparecera tu resumen financiero y el calendario de cobros.
               </p>

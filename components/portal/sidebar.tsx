@@ -25,7 +25,7 @@ export function PortalSidebar({
     .join("") || "A";
 
   return (
-    <aside className="hidden w-64 shrink-0 bg-[hsl(var(--portal-sidebar))] text-white lg:flex lg:min-h-screen lg:flex-col">
+    <aside className="hidden w-64 bg-[hsl(var(--portal-sidebar))] text-white lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex lg:flex-col">
       <div className="border-b border-white/10 px-6 py-7">
         <div className="flex justify-center">
           <Image
