@@ -39,7 +39,7 @@ export default async function PaymentsPage() {
                         {account.courseTitle}
                       </h2>
                       <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold uppercase tracking-[0.18em]">
-                        <span className="rounded-full bg-accent/10 px-3 py-1 text-accent">
+                        <span className="rounded-full bg-accent/10 px-3 py-1 text-primary">
                           {account.planLabel}
                         </span>
                         <span className="rounded-full bg-secondary/10 px-3 py-1 text-secondary">
@@ -60,7 +60,7 @@ export default async function PaymentsPage() {
                   </div>
 
                   <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <div className="rounded-2xl border border-border bg-muted/30 p-4">
+                    <div className="rounded-2xl border border-border bg-white p-4">
                       <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
                         Cobro actual
                       </p>
@@ -69,7 +69,7 @@ export default async function PaymentsPage() {
                       </p>
                     </div>
 
-                    <div className="rounded-2xl border border-border bg-muted/30 p-4">
+                    <div className="rounded-2xl border border-border bg-white p-4">
                       <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
                         Proximo cobro
                       </p>
@@ -78,7 +78,7 @@ export default async function PaymentsPage() {
                       </p>
                     </div>
 
-                    <div className="rounded-2xl border border-border bg-muted/30 p-4">
+                    <div className="rounded-2xl border border-border bg-white p-4">
                       <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
                         Progreso del plan
                       </p>
@@ -92,7 +92,7 @@ export default async function PaymentsPage() {
                       ) : null}
                     </div>
 
-                    <div className="rounded-2xl border border-border bg-muted/30 p-4">
+                    <div className="rounded-2xl border border-border bg-white p-4">
                       <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
                         Metodo
                       </p>
@@ -190,7 +190,7 @@ export default async function PaymentsPage() {
                       account.schedule.map((item) => (
                         <div
                           key={item.id}
-                          className="rounded-2xl border border-border bg-background px-4 py-4"
+                          className="rounded-2xl border border-border bg-white px-4 py-4"
                         >
                           <div className="flex items-start justify-between gap-4">
                             <div>
@@ -217,20 +217,20 @@ export default async function PaymentsPage() {
                         </div>
                       ))
                     ) : (
-                      <div className="rounded-2xl border border-dashed border-border bg-background px-4 py-5 text-sm text-muted-foreground">
+                      <div className="rounded-2xl border border-dashed border-border bg-white px-4 py-5 text-sm text-muted-foreground">
                         No hay renovaciones pendientes para este programa.
                       </div>
                     )}
                   </div>
 
-                  <div className="mt-6 rounded-2xl border border-border bg-background p-5">
+                  <div className="mt-6 rounded-2xl border border-navy-border bg-navy-deep p-5">
                     <div className="flex items-start gap-3">
-                      <CreditCard className="mt-0.5 h-5 w-5 text-secondary" />
+                      <CreditCard className="mt-0.5 h-5 w-5 text-accent" />
                       <div>
-                        <h4 className="text-sm font-bold uppercase tracking-[0.16em] text-primary">
+                        <h4 className="text-sm font-bold uppercase tracking-[0.16em] text-white">
                           Proximamente
                         </h4>
-                        <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                        <p className="mt-2 text-sm leading-7 text-white/70">
                           La siguiente iteracion conectara esta vista para actualizar
                           tarjeta, reintentar cobros pendientes y descargar comprobantes.
                         </p>

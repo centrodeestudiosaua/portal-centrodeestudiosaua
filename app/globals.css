@@ -10,8 +10,8 @@
     --card-foreground: 240 34% 16%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 34% 16%;
-    --primary: 41 48% 57%;
-    --primary-foreground: 240 34% 16%;
+    --primary: 240 34% 16%;
+    --primary-foreground: 0 0% 98%;
     --secondary: 354 69% 34%;
     --secondary-foreground: 0 0% 98%;
     --muted: 240 18% 95%;
@@ -89,6 +89,6 @@
   }
 
   .portal-sidebar-link-active {
-    @apply border-r-4 border-primary bg-[rgba(197,160,89,0.14)] text-primary;
+    @apply border-r-4 border-accent bg-[rgba(197,160,89,0.14)] text-accent;
   }
 }

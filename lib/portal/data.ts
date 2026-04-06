@@ -67,6 +67,8 @@ function takeFirst<T>(value: T | T[] | null | undefined): T | null {
 export type PortalUser = {
   id: string;
   email: string;
+  createdAt: string | null;
+  emailConfirmedAt: string | null;
   profile: StudentProfile | null;
 };
 
@@ -566,6 +568,8 @@ async function getAuthenticatedPortalUser(): Promise<PortalUser | null> {
   return {
     id: user.id,
     email: user.email,
+    createdAt: user.created_at ?? null,
+    emailConfirmedAt: user.email_confirmed_at ?? null,
     profile: profile ?? null,
   };
 }

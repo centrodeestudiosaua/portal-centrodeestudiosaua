@@ -96,7 +96,7 @@ export default async function SettingsPage({
                 id="full_name"
                 name="full_name"
                 defaultValue={profile?.full_name || ""}
-                className="h-11 rounded-none border-border bg-background"
+                className="h-11 rounded-xl border-border bg-white text-primary placeholder:text-muted-foreground"
               />
             </div>
 
@@ -107,7 +107,7 @@ export default async function SettingsPage({
                   id="first_name"
                   name="first_name"
                   defaultValue={profile?.first_name || ""}
-                  className="h-11 rounded-none border-border bg-background"
+                  className="h-11 rounded-xl border-border bg-white text-primary placeholder:text-muted-foreground"
                 />
               </div>
 
@@ -117,7 +117,7 @@ export default async function SettingsPage({
                   id="last_name"
                   name="last_name"
                   defaultValue={profile?.last_name || ""}
-                  className="h-11 rounded-none border-border bg-background"
+                  className="h-11 rounded-xl border-border bg-white text-primary placeholder:text-muted-foreground"
                 />
               </div>
             </div>
@@ -128,7 +128,7 @@ export default async function SettingsPage({
                 id="phone"
                 name="phone"
                 defaultValue={profile?.phone || ""}
-                className="h-11 rounded-none border-border bg-background"
+                className="h-11 rounded-xl border-border bg-white text-primary placeholder:text-muted-foreground"
               />
             </div>
 
@@ -138,13 +138,13 @@ export default async function SettingsPage({
                 id="email"
                 value={user?.email || ""}
                 disabled
-                className="h-11 rounded-none border-border bg-muted/30"
+                className="h-11 rounded-xl border-border bg-muted/40 text-primary"
               />
             </div>
 
             <Button
               type="submit"
-              className="rounded-none bg-primary px-6 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white hover:bg-secondary"
+              className="rounded-xl bg-primary px-6 py-2 text-xs font-bold uppercase tracking-[0.18em] text-primary-foreground hover:bg-[#b7924d]"
             >
               Guardar cambios
             </Button>

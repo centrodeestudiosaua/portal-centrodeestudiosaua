@@ -40,13 +40,13 @@ export default async function CourseDetailPage({
             <h1 className="mt-4 text-4xl font-bold leading-tight text-primary">
               {course.title}
             </h1>
-            <p className="mt-4 max-w-3xl text-sm leading-7 text-muted-foreground">
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-700">
               {course.description}
             </p>
 
             <div className="mt-8 grid gap-4 md:grid-cols-3">
               <div className="rounded-xl border border-border bg-navy-deep p-4 text-white">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">
                   Inicio
                 </p>
                 <p className="mt-2 text-sm font-semibold text-white">
@@ -54,7 +54,7 @@ export default async function CourseDetailPage({
                 </p>
               </div>
               <div className="rounded-xl border border-border bg-navy-deep p-4 text-white">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">
                   Modalidad
                 </p>
                 <p className="mt-2 text-sm font-semibold text-white">
@@ -62,7 +62,7 @@ export default async function CourseDetailPage({
                 </p>
               </div>
               <div className="rounded-xl border border-border bg-navy-deep p-4 text-white">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">
                   Duracion
                 </p>
                 <p className="mt-2 text-sm font-semibold text-white">
@@ -91,7 +91,7 @@ export default async function CourseDetailPage({
             </div>
 
             {!course.isEnrolled && course.purchaseOptions.length ? (
-              <div className="mt-6 space-y-2 text-sm text-muted-foreground">
+              <div className="mt-6 space-y-2 text-sm text-slate-700">
                 {course.purchaseOptions.map((option) => (
                   <p key={option.code}>
                     <span className="font-semibold text-primary">{option.label}:</span>{" "}
@@ -154,7 +154,7 @@ export default async function CourseDetailPage({
                         lesson.title
                       )}
                     </h3>
-                    <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                    <p className="mt-2 text-sm leading-7 text-white/78">
                       {lesson.description || "Contenido disponible en tu acceso."}
                     </p>
                   </div>
@@ -196,7 +196,7 @@ export default async function CourseDetailPage({
                     key={session.id}
                     className="rounded-xl border-l-2 border-secondary bg-navy-deep p-4 text-white"
                   >
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">
                       {new Intl.DateTimeFormat("es-MX", {
                         dateStyle: "full",
                         timeStyle: "short",
@@ -205,7 +205,7 @@ export default async function CourseDetailPage({
                     <h3 className="mt-2 text-base font-bold text-white">
                       {session.title}
                     </h3>
-                    <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                    <p className="mt-2 text-sm leading-7 text-white/78">
                       {session.description}
                     </p>
                   </article>
@@ -216,7 +216,7 @@ export default async function CourseDetailPage({
 
           <section className="portal-card p-8">
             <h2 className="portal-section-title">Beneficios</h2>
-            <ul className="mt-6 space-y-3 text-sm leading-7 text-muted-foreground">
+            <ul className="mt-6 space-y-3 text-sm leading-7 text-slate-700">
               {course.benefits.map((benefit) => (
                 <li key={benefit} className="border-b border-border pb-3 last:border-b-0">
                   {benefit}
