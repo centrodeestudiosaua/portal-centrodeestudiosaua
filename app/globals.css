@@ -68,7 +68,7 @@
   }
 
   .portal-card {
-    @apply rounded-xl border border-border bg-card shadow-sm;
+    @apply rounded-xl border border-border bg-card text-card-foreground shadow-sm;
     box-shadow: 0 18px 48px rgba(20, 19, 38, 0.06);
   }
 
