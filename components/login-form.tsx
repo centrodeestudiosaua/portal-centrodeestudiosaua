@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Lock, LogIn } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -42,9 +43,9 @@ export function LoginForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <form onSubmit={handleLogin} className="space-y-6">
+      <form onSubmit={handleLogin} className="space-y-5">
         <div className="grid gap-2">
-          <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+          <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
             Correo electronico
           </Label>
           <Input
@@ -54,17 +55,17 @@ export function LoginForm({
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="h-12 rounded-[14px]"
+            className="h-12 rounded-[10px] border-[#e7e2d9] bg-[#fbfbfc] text-slate-900 placeholder:text-slate-400"
           />
         </div>
         <div className="grid gap-2">
-          <div className="flex items-center">
-            <Label htmlFor="password" className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+          <div className="flex items-center justify-between gap-3">
+            <Label htmlFor="password" className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
               Contrasena
             </Label>
             <Link
               href="/auth/forgot-password"
-              className="ml-auto inline-block text-sm font-semibold text-secondary underline-offset-4 hover:underline"
+              className="inline-block text-sm font-semibold text-[#9B3328] underline-offset-4 hover:underline"
             >
               Olvidaste tu contrasena?
             </Link>
@@ -75,15 +76,30 @@ export function LoginForm({
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="h-12 rounded-[14px]"
+            className="h-12 rounded-[10px] border-[#e7e2d9] bg-[#fbfbfc] text-slate-900"
           />
         </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
-        <Button type="submit" className="h-12 w-full rounded-[14px] bg-secondary text-white hover:bg-secondary/90" disabled={isLoading}>
-          {isLoading ? "Ingresando..." : "Iniciar sesion"}
+        <Button type="submit" className="h-12 w-full rounded-[10px] bg-[#9B3328] text-white hover:bg-[#862b22]" disabled={isLoading}>
+          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em]">
+            <LogIn className="h-4 w-4" />
+            {isLoading ? "Ingresando..." : "Iniciar sesion"}
+          </span>
         </Button>
-        <div className="text-center text-sm text-muted-foreground">
-          El acceso a alumnos se habilita por compra o alta administrativa.
+        <div className="flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">
+          <Lock className="h-3.5 w-3.5" />
+          Conexion segura
+        </div>
+        <div className="text-center text-sm font-semibold text-[#9B3328]">
+          <Link href="/auth/forgot-password" className="hover:underline">
+            Olvidaste tu contrasena?
+          </Link>
+        </div>
+        <div className="text-center text-sm text-slate-500">
+          ¿No tienes cuenta?{" "}
+          <Link href="/auth/sign-up" className="font-semibold text-[#C5A059] hover:underline">
+            Crear cuenta
+          </Link>
         </div>
       </form>
     </div>

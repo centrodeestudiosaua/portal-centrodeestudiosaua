@@ -2,13 +2,6 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
@@ -49,56 +42,46 @@ export function ForgotPasswordForm({
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       {success ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Revisa tu correo</CardTitle>
-            <CardDescription>Te enviamos un enlace branded de recuperacion</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Si tu cuenta existe, recibirás un correo del portal para definir una nueva contrasena.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="space-y-4 text-center">
+          <p className="text-sm leading-7 text-slate-600">
+            Si tu cuenta existe, recibiras un correo del portal para definir una nueva contrasena.
+          </p>
+          <Link
+            href="/auth/login"
+            className="inline-flex w-full items-center justify-center rounded-[10px] bg-[#9B3328] px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-white hover:bg-[#862b22]"
+          >
+            Volver a iniciar sesion
+          </Link>
+        </div>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Recupera tu acceso</CardTitle>
-            <CardDescription>
-              Ingresa tu correo y te enviaremos un enlace branded para restablecer tu contrasena.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleForgotPassword}>
-              <div className="flex flex-col gap-6">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Correo electronico</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="tu@correo.com"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-                {error && <p className="text-sm text-red-500">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Enviando..." : "Enviar correo de acceso"}
-                </Button>
-              </div>
-              <div className="mt-4 text-center text-sm">
-                ¿Ya tienes cuenta?{" "}
-                <Link
-                  href="/auth/login"
-                  className="underline underline-offset-4"
-                >
-                  Inicia sesion
-                </Link>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+        <form onSubmit={handleForgotPassword} className="space-y-5">
+          <div className="grid gap-2">
+            <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+              Correo electronico
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="tu@correo.com"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="h-12 rounded-[10px] border-[#e7e2d9] bg-[#fbfbfc] text-slate-900 placeholder:text-slate-400"
+            />
+          </div>
+          {error && <p className="text-sm text-red-500">{error}</p>}
+          <Button type="submit" className="h-12 w-full rounded-[10px] bg-[#9B3328] text-white hover:bg-[#862b22]" disabled={isLoading}>
+            <span className="text-xs font-bold uppercase tracking-[0.18em]">
+              {isLoading ? "Enviando..." : "Enviar correo de acceso"}
+            </span>
+          </Button>
+          <div className="text-center text-sm text-slate-500">
+            ¿Ya tienes cuenta?{" "}
+            <Link href="/auth/login" className="font-semibold text-[#9B3328] hover:underline">
+              Inicia sesion
+            </Link>
+          </div>
+        </form>
       )}
     </div>
   );

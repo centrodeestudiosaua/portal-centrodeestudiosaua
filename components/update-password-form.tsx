@@ -3,13 +3,6 @@
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -45,35 +38,28 @@ export function UpdatePasswordForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Define tu contrasena</CardTitle>
-          <CardDescription>
-            Establece la contrasena que usaras para entrar al portal con tu correo.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleForgotPassword}>
-            <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="password">Nueva contrasena</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Nueva contrasena"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Guardando..." : "Guardar contrasena"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+      <form onSubmit={handleForgotPassword} className="space-y-5">
+        <div className="grid gap-2">
+          <Label htmlFor="password" className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+            Nueva contrasena
+          </Label>
+          <Input
+            id="password"
+            type="password"
+            placeholder="Nueva contrasena"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="h-12 rounded-[10px] border-[#e7e2d9] bg-[#fbfbfc] text-slate-900 placeholder:text-slate-400"
+          />
+        </div>
+        {error && <p className="text-sm text-red-500">{error}</p>}
+        <Button type="submit" className="h-12 w-full rounded-[10px] bg-[#9B3328] text-white hover:bg-[#862b22]" disabled={isLoading}>
+          <span className="text-xs font-bold uppercase tracking-[0.18em]">
+            {isLoading ? "Guardando..." : "Guardar contrasena"}
+          </span>
+        </Button>
+      </form>
     </div>
   );
 }
