@@ -163,7 +163,7 @@ export async function POST(request: Request) {
     const existingStudentId =
       resolvedUserId ?? (resolvedUserEmail ? await findExistingStudentIdByEmail(admin, resolvedUserEmail) : null);
 
-    const [{ data: course }, { data: enrollment }] = await Promise.all([
+    const [{ data: course }, { data: enrollment }, { data: paidPayment }] = await Promise.all([
       admin
         .from("courses")
         .select(
@@ -182,13 +182,24 @@ export async function POST(request: Request) {
             .in("status", ["active", "completed"])
             .maybeSingle()
         : Promise.resolve({ data: null }),
+      existingStudentId
+        ? admin
+            .from("payments")
+            .select("id, payment_type, status, amount_mxn, paid_at")
+            .eq("student_id", existingStudentId)
+            .eq("course_id", courseId)
+            .eq("status", "paid")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
 
     if (!course) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
-    if (enrollment) {
+    if (enrollment || paidPayment) {
       return NextResponse.json(
         { error: "Este programa ya esta activo para ese correo. Inicia sesion para entrar al portal." },
         { status: 409 },

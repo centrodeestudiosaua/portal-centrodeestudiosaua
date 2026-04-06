@@ -331,6 +331,62 @@ export async function POST(request: Request) {
       )}`;
     }
 
+    const [{ data: duplicateEnrollment }, { data: duplicatePayment }] = await Promise.all([
+      admin
+        .from("enrollments")
+        .select("id, status")
+        .eq("student_id", resolvedUserId!)
+        .eq("course_id", courseId)
+        .in("status", ["active", "completed"])
+        .maybeSingle(),
+      admin
+        .from("payments")
+        .select("id, stripe_payment_intent_id, status")
+        .eq("student_id", resolvedUserId!)
+        .eq("course_id", courseId)
+        .eq("status", "paid")
+        .neq("stripe_payment_intent_id", paymentIntent.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+    if (duplicatePayment) {
+      if (paymentIntent.status === "succeeded") {
+        await stripe.refunds.create({
+          payment_intent: paymentIntent.id,
+          reason: "duplicate",
+        });
+      }
+
+      const { data: existingPayment } = await admin
+        .from("payments")
+        .select("id")
+        .eq("stripe_payment_intent_id", paymentIntent.id)
+        .maybeSingle();
+
+      if (!existingPayment) {
+        await admin.from("payments").insert({
+          student_id: resolvedUserId!,
+          course_id: courseId,
+          provider: "stripe",
+          payment_type: paymentType === "installments" ? "installment" : "one_time",
+          status: "refunded",
+          amount_mxn: paymentIntent.amount ? paymentIntent.amount / 100 : 0,
+          currency: paymentIntent.currency ?? "mxn",
+          stripe_payment_intent_id: paymentIntent.id,
+          stripe_customer_id:
+            typeof paymentIntent.customer === "string" ? paymentIntent.customer : null,
+          paid_at: new Date().toISOString(),
+        });
+      }
+
+      return NextResponse.json(
+        { error: "Ya existe un plan pagado para este programa. El cobro duplicado fue revertido." },
+        { status: 409 },
+      );
+    }
+
     const { data: existingPayment } = await admin
       .from("payments")
       .select("id")
@@ -353,15 +409,17 @@ export async function POST(request: Request) {
       });
     }
 
-    await admin.from("enrollments").upsert(
-      {
-        student_id: resolvedUserId!,
-        course_id: courseId,
-        status: "active",
-        enrolled_at: new Date().toISOString(),
-      },
-      { onConflict: "student_id,course_id" },
-    );
+    if (!duplicateEnrollment) {
+      await admin.from("enrollments").upsert(
+        {
+          student_id: resolvedUserId!,
+          course_id: courseId,
+          status: "active",
+          enrolled_at: new Date().toISOString(),
+        },
+        { onConflict: "student_id,course_id" },
+      );
+    }
 
     let subscriptionId: string | null = null;
 
