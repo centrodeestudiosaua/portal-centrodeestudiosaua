@@ -52,10 +52,10 @@ export default function DiplomadoEnAmparoPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative bg-[#151528] pt-16 pb-32 overflow-hidden text-white border-b border-slate-800">
+      <section className="relative bg-[#151528] pt-12 pb-20 md:pt-16 md:pb-32 overflow-hidden text-white border-b border-slate-800">
         <div className="absolute inset-0 z-0 opacity-20 bg-center bg-cover bg-no-repeat MixAndMatch" style={{ backgroundImage: "url('/diplomadoamparo.png')" }} />
         
-        <div className="container relative z-10 px-4 md:px-6 max-w-[1340px] mx-auto flex flex-col lg:flex-row gap-12 lg:gap-8">
+        <div className="container relative z-10 px-6 md:px-10 max-w-[1400px] mx-auto flex flex-col lg:flex-row gap-12 lg:gap-8">
           
           {/* Left Column - Hero Content */}
           <div className="flex-1 min-w-0 lg:pr-8">
@@ -64,7 +64,7 @@ export default function DiplomadoEnAmparoPage() {
               <span className="text-[#C5A55D] text-xs font-semibold tracking-wider uppercase">Alta Especialización 2026</span>
             </div>
 
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-8 font-sans">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-8 font-sans">
               Diplomado en <br />
               <span className="text-[#C5A55D] font-serif italic font-normal tracking-wide">Amparo</span>
             </h1>
@@ -73,9 +73,9 @@ export default function DiplomadoEnAmparoPage() {
               Un programa de amparo de alto nivel, diseñado para la actualización profesional de abogados postulantes. Nuestro enfoque principal es la técnica procesal, el litigio estratégico y la argumentación jurídica aplicada a problemas reales.
             </p>
 
-            <div className="inline-flex items-center gap-3 border border-[#C5A55D]/30 rounded-md px-5 py-3 mb-8 bg-[#1E1C3A]/50">
+            <div className="inline-flex items-center gap-3 border border-[#C5A55D]/30 rounded-md px-4 py-2.5 md:px-5 md:py-3 mb-8 bg-[#1E1C3A]/50">
               <PenTool className="w-5 h-5 text-[#C5A55D]" />
-              <span className="text-sm md:text-base font-medium text-[#EAD896]">Incluye Taller Práctico: Elaboración de Demanda de Amparo Directo e Indirecto</span>
+              <span className="text-xs sm:text-sm md:text-base font-medium text-[#EAD896]">Incluye Taller Práctico: Elaboración de Demanda de Amparo Directo e Indirecto</span>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
@@ -96,7 +96,7 @@ export default function DiplomadoEnAmparoPage() {
       </section>
 
       {/* Main Content & Sticky Card Layout */}
-      <section className="container px-4 md:px-6 max-w-[1340px] mx-auto py-20 relative z-20 flex flex-col lg:flex-row gap-12 lg:gap-10">
+      <section className="container px-6 md:px-10 max-w-[1400px] mx-auto py-12 md:py-20 relative z-20 flex flex-col lg:flex-row gap-12 lg:gap-10">
         
         {/* Left Column - Main Body */}
         <div className="flex-1 min-w-0">
@@ -1555,7 +1555,7 @@ export default function DiplomadoEnAmparoPage() {
               <span className="inline-flex items-center gap-1.5 border border-[#C5A55D]/30 rounded-full px-3 py-1 mb-6">
                 <span className="text-[#C5A55D] text-[10px] font-bold tracking-widest uppercase">Cupo Altamente Limitado</span>
               </span>
-              <h3 className="text-white text-3xl font-bold font-display mb-3">Solicita tu Admisión</h3>
+              <h3 className="text-white text-2xl sm:text-3xl font-bold font-display mb-3">Solicita tu Admisión</h3>
               <p className="text-slate-400 text-sm mb-8 leading-relaxed max-w-[280px]">Reserva tu lugar y accede al programa de amparo más completo de México.</p>
               
               <div className="flex items-center gap-2 text-[#C5A55D] text-xs font-bold tracking-widest uppercase">
@@ -1653,7 +1653,7 @@ export default function DiplomadoEnAmparoPage() {
 
             {/* FAQ Full Width Section */}
       <section className="bg-slate-50 py-24 border-t border-slate-200">
-        <div className="container px-4 md:px-6 max-w-3xl mx-auto">
+        <div className="container px-6 md:px-10 max-w-3xl mx-auto">
           <h3 className="text-[#9B1D20] text-sm font-bold tracking-[0.15em] uppercase text-center mb-6">Preguntas Frecuentes</h3>
           <h2 className="text-3xl md:text-5xl font-bold text-[#1F2937] text-center mb-4 font-display">Resolviendo tus dudas</h2>
           <p className="text-center text-slate-500 text-lg mb-12">Todo lo que necesitas saber sobre el Diplomado en Amparo.</p>
@@ -1722,7 +1722,7 @@ export default function DiplomadoEnAmparoPage() {
 
       {/* Actual Footer (Mini) */}
       <footer className="bg-[#121222] py-16 border-t border-slate-800">
-        <div className="container px-4 md:px-6 max-w-[1340px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-10 lg:gap-8">
+        <div className="container px-6 md:px-10 max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-10 lg:gap-8">
           <div className="col-span-1 md:col-span-1">
             <Image src="/logo.png" alt="AUA Logo" width={100} height={32} className="mb-6 w-auto h-8 object-contain" />
             <p className="text-slate-400 text-xs leading-relaxed max-w-[200px]">
@@ -1758,7 +1758,7 @@ export default function DiplomadoEnAmparoPage() {
           </div>
         </div>
 
-        <div className="container px-4 md:px-6 max-w-[1340px] mx-auto mt-16 pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="container px-6 md:px-10 max-w-[1400px] mx-auto mt-16 pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-slate-600 text-[10px] tracking-widest uppercase">
             © 2026 AUA Centro de Estudios. Excelencia Jurídica Global.
           </p>

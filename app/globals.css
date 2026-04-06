@@ -50,7 +50,7 @@
     @apply bg-background text-foreground font-sans;
     background: #f7f8fc;
     min-height: 100vh;
-    overscroll-behavior-y: none;
+    
   }
   h1,
   h2,
