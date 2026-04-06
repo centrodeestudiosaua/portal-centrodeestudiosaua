@@ -40,13 +40,10 @@ export default function DiplomadoEnAmparoPage() {
       {/* Header */}
       <header className="bg-[#151528] py-6 flex justify-center">
         <Link href="/">
-          <Image 
+          <img 
             src="/logo.png" 
             alt="AUA Centro de Estudios" 
-            width={240} 
-            height={80} 
-            className="w-auto h-20 object-contain"
-            priority
+            className="h-20 w-auto object-contain"
           />
         </Link>
       </header>
@@ -1706,7 +1703,7 @@ export default function DiplomadoEnAmparoPage() {
 
       {/* Footer Contact */}
       <section className="bg-[#151528] py-20 border-t border-slate-800">
-        <div className="container px-4 text-center">
+        <div className="container px-6 md:px-10 mx-auto text-center">
           <div className="w-16 h-16 rounded-full border border-[#C5A55D]/30 flex items-center justify-center mx-auto mb-6">
             <MessageCircleQuestion className="w-6 h-6 text-[#C5A55D]" />
           </div>
@@ -1724,7 +1721,7 @@ export default function DiplomadoEnAmparoPage() {
       <footer className="bg-[#121222] py-16 border-t border-slate-800">
         <div className="container px-6 md:px-10 max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-10 lg:gap-8">
           <div className="col-span-1 md:col-span-1">
-            <Image src="/logo.png" alt="AUA Logo" width={100} height={32} className="mb-6 w-auto h-8 object-contain" />
+            <img src="/logo.png" alt="AUA Logo" className="mb-6 h-8 w-auto object-contain" />
             <p className="text-slate-400 text-xs leading-relaxed max-w-[200px]">
               Referente en formación jurídica de alto nivel. Impulsamos el éxito a través de la excelencia académica.
             </p>
