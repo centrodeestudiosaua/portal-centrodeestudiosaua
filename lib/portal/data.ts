@@ -77,11 +77,15 @@ export type DashboardCourse = {
   slug: string;
   category: string;
   title: string;
+  description: string | null;
   cover: string;
   progress: number;
+  lessonsCompleted: number;
+  lessonsTotal: number;
   lessonsLabel: string;
   lastSeen: string;
   expiry: string;
+  priceLabel: string | null;
   href: string;
 };
 
@@ -620,6 +624,9 @@ export async function getDashboardData(): Promise<{
             cover_image_url,
             access_type,
             duration_label,
+            price_mxn,
+            installment_amount_mxn,
+            installments_count,
             course_lessons ( id ),
             lesson_progress (
               completed,
@@ -695,13 +702,22 @@ export async function getDashboardData(): Promise<{
         slug: course.slug,
         category: toCourseCategory(course.access_type, course.badge_text),
         title: course.title,
+        description: course.description ?? null,
         cover: toCover(course.thumbnail_url, course.cover_image_url),
         progress: totalProgress,
+        lessonsCompleted,
+        lessonsTotal,
         lessonsLabel: `${lessonsCompleted}/${lessonsTotal} Lecciones`,
         lastSeen: `Ultima vez: ${formatLastSeen(latestSeen)}`,
         expiry: enrollment.access_expires_at
           ? `Acceso hasta ${new Intl.DateTimeFormat("es-MX").format(new Date(enrollment.access_expires_at))}`
           : course.duration_label || "Acceso activo",
+        priceLabel:
+          course.access_type === "installments" && course.installment_amount_mxn
+            ? `${formatCurrencyMxn(course.installment_amount_mxn)} / mes`
+            : course.price_mxn
+              ? formatCurrencyMxn(course.price_mxn)
+              : null,
         href: `/courses/${course.slug}`,
       };
     })

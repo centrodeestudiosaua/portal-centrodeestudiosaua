@@ -11,6 +11,7 @@ export function PortalSidebar({
 }: {
   user?: {
     fullName: string;
+    email?: string | null;
     membershipLabel?: string | null;
   };
 }) {
@@ -24,15 +25,18 @@ export function PortalSidebar({
 
   return (
     <aside className="hidden w-64 shrink-0 bg-[hsl(var(--portal-sidebar))] text-white lg:flex lg:min-h-screen lg:flex-col">
-      <div className="border-b border-white/10 px-6 py-6">
-        <div className="flex items-center gap-3">
-          <span className="text-3xl font-bold tracking-tight text-accent">AUA</span>
-          <div className="h-6 w-px bg-white/20" />
-          <span className="text-[10px] font-bold uppercase tracking-[0.18em] leading-tight text-white/90">
-            Centro de Estudios
-            <br />
-            Juridicos
-          </span>
+      <div className="border-b border-white/10 px-6 py-7">
+        <div className="flex justify-center">
+          <div className="flex w-full max-w-[148px] flex-col items-center rounded-2xl border border-white/8 bg-white/[0.03] px-5 py-4 text-center">
+            <p className="text-3xl font-bold tracking-[0.22em] text-white">
+              AUA
+            </p>
+            <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.24em] leading-tight text-white/58">
+              Centro de Estudios
+              <br />
+              Juridicos
+            </p>
+          </div>
         </div>
       </div>
 
@@ -76,14 +80,22 @@ export function PortalSidebar({
           <span>{settingsItem.label}</span>
         </Link>
 
-        <div className="mt-8 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-sm font-bold text-primary">
-            {initials}
+        <div className="mt-8 rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-sm font-bold text-primary">
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-white">
+                {user?.fullName || "Alumno AUA"}
+              </p>
+              <p className="truncate text-[10px] uppercase tracking-[0.16em] text-[hsl(var(--portal-sidebar-muted))]">
+                {user?.email || user?.membershipLabel || "Alumno Activo"}
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-bold text-white">
-              {user?.fullName || "Alumno AUA"}
-            </p>
+
+          <div className="mt-4 border-t border-white/8 pt-4">
             <p className="text-[10px] uppercase tracking-[0.16em] text-[hsl(var(--portal-sidebar-muted))]">
               {user?.membershipLabel || "Alumno Activo"}
             </p>

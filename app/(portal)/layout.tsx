@@ -17,6 +17,7 @@ export default async function PortalLayout({
       <PortalSidebar
         user={{
           fullName: user?.profile?.full_name || user?.email || "Alumno AUA",
+          email: user?.email,
           membershipLabel: user?.profile?.membership_label,
         }}
       />

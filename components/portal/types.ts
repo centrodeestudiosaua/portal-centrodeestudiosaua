@@ -18,11 +18,15 @@ export type CourseProgressItem = {
   id: string;
   category: string;
   title: string;
+  description?: string | null;
   cover: string;
   progress: number;
+  lessonsCompleted?: number;
+  lessonsTotal?: number;
   lessonsLabel: string;
   lastSeen: string;
   expiry: string;
+  priceLabel?: string | null;
   href: string;
 };
 
