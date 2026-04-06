@@ -66,7 +66,7 @@ export function StudentRegistrationPage() {
         </section>
 
         <aside className="lg:justify-self-end">
-          <div className="overflow-hidden rounded-[20px] border border-white/10 bg-white shadow-[0_30px_80px_rgba(8,11,27,0.32)]">
+          <div className="overflow-hidden rounded-[20px] bg-white shadow-[0_30px_80px_rgba(8,11,27,0.32)]">
             <div className="relative overflow-hidden bg-[linear-gradient(180deg,rgba(28,27,57,0.98),rgba(36,33,69,0.95))] px-6 py-8 text-center text-white">
               <div className="absolute inset-0 opacity-[0.08]">
                 <Image

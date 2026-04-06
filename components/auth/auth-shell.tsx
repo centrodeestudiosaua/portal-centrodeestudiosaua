@@ -27,7 +27,7 @@ export function AuthShell({
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_left_center,rgba(197,160,89,0.08),transparent_22%),linear-gradient(180deg,rgba(18,18,35,0.92),rgba(26,26,53,0.98))]" />
 
       <div className="relative w-full max-w-[530px]">
-        <div className="overflow-hidden rounded-[18px] bg-white shadow-[0_34px_90px_rgba(8,11,27,0.34)]">
+        <div className="overflow-hidden rounded-[18px] bg-white shadow-[0_34px_90px_rgba(8,11,27,0.34)] ring-0">
           <div className="relative overflow-hidden bg-[linear-gradient(180deg,rgba(28,27,57,0.98),rgba(36,33,69,0.95))] px-10 py-9 text-center text-white">
             <div className="absolute inset-0 opacity-[0.08]">
               <Image
