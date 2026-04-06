@@ -57,7 +57,7 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-[980px] space-y-7">
+    <div className="space-y-7">
       <section className="overflow-hidden rounded-[28px] border border-white/8 bg-[#232342] text-white shadow-[0_28px_80px_rgba(18,16,37,0.18)]">
         <div className="relative px-7 py-7 sm:px-8">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_20%,rgba(255,255,255,0.08),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.04),transparent_55%)]" />

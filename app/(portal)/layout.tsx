@@ -22,7 +22,7 @@ export default async function PortalLayout({
         }}
       />
       <div className="min-h-screen flex-1">
-        <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[980px] px-4 py-6 sm:px-6 lg:px-0">
           <PortalTopbar email={user?.email} />
           {children}
         </div>
