@@ -10,7 +10,7 @@ export default async function PaymentsPage() {
   const accounts = data?.accounts ?? [];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-7">
       <header>
         <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-accent">
           Mis Pagos
@@ -25,17 +25,17 @@ export default async function PaymentsPage() {
       </header>
 
       {accounts.length ? (
-        <div className="space-y-8">
+        <div className="space-y-6">
           {accounts.map((account) => (
-            <section key={account.courseId} className="portal-card overflow-hidden">
-              <div className="grid gap-0 xl:grid-cols-[1.2fr_0.8fr]">
-                <div className="p-8">
-                  <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-start sm:justify-between">
+            <section key={account.courseId} className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_18px_50px_rgba(21,18,40,0.06)]">
+              <div className="grid gap-0 xl:grid-cols-[minmax(0,1.35fr)_340px]">
+                <div className="p-6 lg:p-7">
+                  <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-accent">
                         Programa
                       </p>
-                      <h2 className="mt-3 text-3xl font-bold text-primary">
+                      <h2 className="mt-3 text-[2rem] font-bold leading-tight text-primary">
                         {account.courseTitle}
                       </h2>
                       <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold uppercase tracking-[0.18em]">
@@ -59,51 +59,51 @@ export default async function PaymentsPage() {
                     </Link>
                   </div>
 
-                  <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <div className="rounded-2xl border border-border bg-white p-4">
+                  <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="min-h-[132px] rounded-xl border border-border bg-white p-4">
                       <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
                         Cobro actual
                       </p>
-                      <p className="mt-3 text-2xl font-bold text-primary">
+                      <p className="mt-3 text-[2rem] font-bold leading-none text-primary">
                         {account.currentChargeLabel}
                       </p>
                     </div>
 
-                    <div className="rounded-2xl border border-border bg-white p-4">
+                    <div className="min-h-[132px] rounded-xl border border-border bg-white p-4">
                       <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
                         Proximo cobro
                       </p>
-                      <p className="mt-3 text-lg font-bold text-primary">
+                      <p className="mt-3 text-[1.05rem] font-bold leading-tight text-primary">
                         {account.nextChargeLabel || "Sin renovacion pendiente"}
                       </p>
                     </div>
 
-                    <div className="rounded-2xl border border-border bg-white p-4">
+                    <div className="min-h-[132px] rounded-xl border border-border bg-white p-4">
                       <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
                         Progreso del plan
                       </p>
-                      <p className="mt-3 text-lg font-bold text-primary">
+                      <p className="mt-3 text-[1.05rem] font-bold leading-tight text-primary">
                         {account.paidInstallmentsLabel || "Pago liquidado"}
                       </p>
                       {account.remainingInstallmentsLabel ? (
-                        <p className="mt-1 text-sm text-slate-500">
+                        <p className="mt-2 text-sm leading-6 text-slate-500">
                           {account.remainingInstallmentsLabel}
                         </p>
                       ) : null}
                     </div>
 
-                    <div className="rounded-2xl border border-border bg-white p-4">
+                    <div className="min-h-[132px] rounded-xl border border-border bg-white p-4">
                       <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
                         Metodo
                       </p>
-                      <p className="mt-3 text-lg font-bold text-primary">
+                      <p className="mt-3 text-[1.05rem] font-bold leading-tight text-primary">
                         {account.paymentMethodLabel || "Tarjeta registrada"}
                       </p>
                     </div>
                   </div>
 
-                  <div className={`mt-6 grid gap-4 ${account.renewalCadenceLabel ? "lg:grid-cols-2" : "lg:grid-cols-1"}`}>
-                    <div className="rounded-2xl border border-border p-5">
+                  <div className={`mt-5 grid gap-3 ${account.renewalCadenceLabel ? "lg:grid-cols-2" : "lg:grid-cols-1"}`}>
+                    <div className="rounded-xl border border-border p-5">
                       <div className="flex items-start gap-3">
                         <ShieldCheck className="mt-0.5 h-5 w-5 text-accent" />
                         <div>
@@ -118,7 +118,7 @@ export default async function PaymentsPage() {
                     </div>
 
                     {account.renewalCadenceLabel ? (
-                      <div className="rounded-2xl border border-border p-5">
+                      <div className="rounded-xl border border-border p-5">
                         <div className="flex items-start gap-3">
                           <CreditCard className="mt-0.5 h-5 w-5 text-secondary" />
                           <div>
@@ -139,11 +139,11 @@ export default async function PaymentsPage() {
                     ) : null}
                   </div>
 
-                  <div className="mt-8">
+                  <div className="mt-6">
                     <h3 className="text-sm font-bold uppercase tracking-[0.16em] text-primary">
                       Historial de movimientos
                     </h3>
-                    <div className="mt-4 overflow-hidden rounded-2xl border border-border">
+                    <div className="mt-4 overflow-hidden rounded-xl border border-border">
                       <table className="w-full text-left">
                         <thead className="bg-muted/40">
                           <tr className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
@@ -182,16 +182,16 @@ export default async function PaymentsPage() {
                   </div>
                 </div>
 
-                <aside className="border-t border-border bg-muted/20 p-8 xl:border-l xl:border-t-0">
+                <aside className="border-t border-border bg-muted/20 p-6 xl:border-l xl:border-t-0 xl:p-6">
                   <h3 className="text-sm font-bold uppercase tracking-[0.16em] text-primary">
                     Calendario del plan
                   </h3>
-                  <div className="mt-5 space-y-3">
+                  <div className="mt-4 space-y-3">
                     {account.schedule.length ? (
                       account.schedule.map((item) => (
                         <div
                           key={item.id}
-                          className="rounded-2xl border border-border bg-white px-4 py-4"
+                          className="rounded-xl border border-border bg-white px-4 py-4"
                         >
                           <div className="flex items-start justify-between gap-4">
                             <div>
@@ -218,7 +218,7 @@ export default async function PaymentsPage() {
                         </div>
                       ))
                     ) : (
-                      <div className="rounded-2xl border border-dashed border-border bg-white px-4 py-5 text-sm text-slate-500">
+                      <div className="rounded-xl border border-dashed border-border bg-white px-4 py-5 text-sm text-slate-500">
                         No hay renovaciones pendientes para este programa.
                       </div>
                     )}

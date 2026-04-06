@@ -8,7 +8,7 @@ export function PortalTopbar({
   email?: string | null;
 }) {
   return (
-    <header className="mb-8 flex items-center justify-between gap-4">
+    <header className="flex min-h-[44px] items-center justify-between gap-4">
       <button
         type="button"
         className="inline-flex h-11 w-11 items-center justify-center border border-border bg-card text-primary lg:hidden"
@@ -25,7 +25,7 @@ export function PortalTopbar({
         </span>
         <LogoutButton
           variant="outline"
-          className="gap-2 rounded-none border-border bg-card px-4 text-xs font-bold uppercase tracking-[0.18em] text-primary hover:bg-muted"
+          className="gap-2 rounded-md border-border bg-card px-4 text-xs font-bold uppercase tracking-[0.18em] text-primary hover:bg-muted"
         >
           <LogOut className="h-4 w-4" />
           Salir

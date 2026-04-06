@@ -367,6 +367,18 @@ function formatPortalDateShort(value: string | number | Date | null | undefined)
   }).format(date);
 }
 
+function invoiceAmountMxn(invoice: Stripe.Invoice) {
+  if (typeof invoice.amount_paid === "number" && invoice.amount_paid > 0) {
+    return invoice.amount_paid / 100;
+  }
+
+  if (typeof invoice.amount_due === "number" && invoice.amount_due > 0) {
+    return invoice.amount_due / 100;
+  }
+
+  return null;
+}
+
 function subscriptionStatusLabel(status: Stripe.Subscription.Status) {
   switch (status) {
     case "trialing":
@@ -423,7 +435,7 @@ function paymentStatusLabel(status: string) {
 function paymentMethodLabel(method: Stripe.PaymentMethod | null) {
   if (!method || method.type !== "card" || !method.card) return null;
   const brand = method.card.brand ? method.card.brand.toUpperCase() : "Tarjeta";
-  return `${brand} terminacion ${method.card.last4}`;
+  return `${brand} • ${method.card.last4}`;
 }
 
 function nextChargeFromSubscription(subscription: Stripe.Subscription) {
@@ -983,7 +995,10 @@ export async function getPaymentsPageData(): Promise<PaymentsPageData | null> {
             typeof invoice.parent?.subscription_details?.subscription === "string"
               ? invoice.parent.subscription_details.subscription
               : null;
-          return invoiceSubscriptionId === subscription?.id;
+          return (
+            invoiceSubscriptionId === subscription?.id &&
+            invoiceAmountMxn(invoice) !== null
+          );
         })
         .sort((a, b) => b.created - a.created);
 
@@ -1006,13 +1021,7 @@ export async function getPaymentsPageData(): Promise<PaymentsPageData | null> {
             invoice.status === "paid"
               ? "Cobro del plan"
               : "Cobro pendiente",
-          amountLabel: formatCurrencyMxn(
-            typeof invoice.amount_paid === "number" && invoice.amount_paid > 0
-              ? invoice.amount_paid / 100
-              : typeof invoice.amount_due === "number"
-                ? invoice.amount_due / 100
-                : null,
-          ),
+          amountLabel: formatCurrencyMxn(invoiceAmountMxn(invoice)),
           statusLabel: paymentStatusLabel(invoice.status ?? "open"),
           dateLabel:
             formatPortalDateShort(
@@ -1080,7 +1089,7 @@ export async function getPaymentsPageData(): Promise<PaymentsPageData | null> {
             ? subscription.items.data[0].price.unit_amount / 100
             : initialPaidPayment?.amount_mxn ?? course.price_mxn,
         ),
-        nextChargeLabel: nextChargeAt ? formatPortalDate(nextChargeAt) : null,
+        nextChargeLabel: nextChargeAt ? formatPortalDateShort(nextChargeAt) : null,
         startDateLabel: course.start_date_label,
         renewalCadenceLabel:
           subscription && totalInstallments && nextChargeAt
