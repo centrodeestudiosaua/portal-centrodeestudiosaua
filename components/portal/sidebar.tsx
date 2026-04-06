@@ -34,7 +34,8 @@ export function PortalSidebar({
             width={108}
             height={58}
             priority
-            className="h-auto w-[108px] object-contain"
+            className="object-contain"
+            style={{ width: "108px", height: "auto" }}
           />
         </div>
       </div>

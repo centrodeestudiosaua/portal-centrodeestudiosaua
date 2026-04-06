@@ -70,7 +70,8 @@ export default async function DashboardPage() {
                   width={114}
                   height={60}
                   priority
-                  className="h-auto w-[114px] object-contain"
+                  className="object-contain"
+                  style={{ width: "114px", height: "auto" }}
                 />
               </div>
 

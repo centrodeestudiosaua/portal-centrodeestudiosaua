@@ -35,7 +35,8 @@ export function AuthShell({
               width={190}
               height={62}
               priority
-              className="mx-auto h-auto w-auto"
+              className="mx-auto"
+              style={{ width: "190px", height: "auto" }}
             />
             <h1 className="mt-8 text-4xl font-bold">{title}</h1>
             <p className="mt-3 text-sm leading-7 text-white/72">{subtitle}</p>
