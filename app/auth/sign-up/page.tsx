@@ -1,5 +1,5 @@
-import { StudentRegistrationPage } from "@/components/auth/student-registration-page";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <StudentRegistrationPage />;
+  redirect("/inscribirse");
 }

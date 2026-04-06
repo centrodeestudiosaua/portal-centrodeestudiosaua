@@ -44,7 +44,7 @@ async function ErrorContent({
         <p className="text-sm leading-7 text-muted-foreground">{message}</p>
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button asChild className="rounded-none">
-            <Link href="/auth/sign-up">Solicitar nuevo enlace</Link>
+            <Link href="/inscribirse">Solicitar nuevo enlace</Link>
           </Button>
           <Button asChild variant="outline" className="rounded-none">
             <Link href="/auth/login">Ir a iniciar sesion</Link>
