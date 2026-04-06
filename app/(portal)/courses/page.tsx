@@ -43,7 +43,7 @@ export default async function CoursesPage() {
       </header>
 
       {courses.length ? (
-        <div className="max-w-[960px] space-y-6">
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {courses.map((course) => (
             <article
               key={course.id}
@@ -54,7 +54,7 @@ export default async function CoursesPage() {
                   src={course.thumbnailUrl}
                   alt={course.title}
                   fill
-                  sizes="(max-width: 1024px) 100vw, 960px"
+                  sizes="(max-width: 767px) 100vw, (max-width: 1279px) 50vw, 33vw"
                   className="object-cover"
                 />
                 {course.isEnrolled ? (
@@ -65,8 +65,8 @@ export default async function CoursesPage() {
               </div>
 
               <div className="p-5">
-                <h2 className="text-2xl font-bold text-primary">{course.title}</h2>
-                <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-600">
+                <h2 className="text-xl font-bold text-primary">{course.title}</h2>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
                   {course.description || "Contenido academico disponible."}
                 </p>
 
@@ -77,8 +77,8 @@ export default async function CoursesPage() {
                   />
                 </div>
 
-                <div className="mt-5 flex flex-col gap-4 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex flex-wrap items-center gap-5 text-sm text-slate-500">
+                <div className="mt-5 flex flex-col gap-4 border-t border-border pt-4">
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500">
                     <span className="flex items-center gap-2">
                       <BookOpen className="h-4 w-4 text-slate-400" />
                       {course.lessonsTotal} lecciones
@@ -93,7 +93,7 @@ export default async function CoursesPage() {
 
                   <Button
                     asChild
-                    className="rounded-none bg-primary px-6 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white hover:bg-[#2a2950]"
+                    className="w-full rounded-md bg-primary px-6 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white hover:bg-[#2a2950]"
                   >
                     <Link href={`/courses/${course.slug}`}>
                       {course.isEnrolled ? "Acceder al curso" : "Ver curso"}
