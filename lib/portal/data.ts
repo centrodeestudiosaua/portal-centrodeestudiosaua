@@ -980,12 +980,23 @@ export async function getPaymentsPageData(): Promise<PaymentsPageData | null> {
         subscription && typeof subscription.customer === "string"
           ? subscription.customer
           : null;
+      const subscriptionAmount =
+        subscription && subscription.items.data[0]?.price.unit_amount
+          ? subscription.items.data[0].price.unit_amount / 100
+          : null;
 
-      const accountPayments = subscriptionCustomerId
+      const accountPaymentsBase = subscriptionCustomerId
         ? coursePayments.filter(
             (payment) => payment.stripe_customer_id === subscriptionCustomerId,
           )
         : coursePayments.slice(0, 1);
+
+      const accountPayments =
+        subscriptionAmount !== null
+          ? accountPaymentsBase.filter(
+              (payment) => payment.amount_mxn === subscriptionAmount,
+            )
+          : accountPaymentsBase;
 
       const initialPaidPayment =
         [...accountPayments]
@@ -1075,8 +1086,8 @@ export async function getPaymentsPageData(): Promise<PaymentsPageData | null> {
               nextChargeDate: nextChargeAt,
               totalInstallments,
               amountPerCharge:
-                subscription && subscription.items.data[0]?.price.unit_amount
-                  ? subscription.items.data[0].price.unit_amount / 100
+                subscriptionAmount !== null
+                  ? subscriptionAmount
                   : course.installment_amount_mxn,
               paidInstallments,
             })
@@ -1106,8 +1117,8 @@ export async function getPaymentsPageData(): Promise<PaymentsPageData | null> {
           ? subscriptionStatusLabel(subscription.status)
           : paymentStatusLabel(coursePayments[0]?.status ?? "pending"),
         currentChargeLabel: formatCurrencyMxn(
-          subscription && subscription.items.data[0]?.price.unit_amount
-            ? subscription.items.data[0].price.unit_amount / 100
+          subscriptionAmount !== null
+            ? subscriptionAmount
             : initialPaidPayment?.amount_mxn ?? course.price_mxn,
         ),
         nextChargeLabel: nextChargeAt ? formatPortalDateShort(nextChargeAt) : null,
