@@ -4,8 +4,12 @@ import { hasEnvVars } from "../utils";
 
 const ADMIN_HOST = "admin.centrodeestudiosaua.com";
 
-// Rutas permitidas desde el dominio admin (todo lo demás → /admin)
-const ADMIN_DOMAIN_WHITELIST = ["/admin", "/login", "/auth", "/api", "/_next"];
+// Rutas permitidas desde el dominio admin (todo lo demás → /dashboard)
+const ADMIN_DOMAIN_WHITELIST = [
+  "/dashboard", "/leads", "/alumnos", "/pagos",
+  "/sesiones", "/cursos", "/reportes", "/ajustes",
+  "/login", "/auth", "/api", "/_next",
+];
 
 // Rutas públicas del dominio de alumnos (no requieren auth)
 const PUBLIC_ROUTES = [
