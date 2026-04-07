@@ -4,6 +4,11 @@ type SendEmailInput = {
   html: string;
 };
 
+type PortalNotification = {
+  subject: string;
+  html: string;
+};
+
 function getBaseUrl() {
   return process.env.NEXT_PUBLIC_SITE_URL || "https://portal-centrodeestudiosaua.vercel.app";
 }
@@ -70,6 +75,125 @@ export function renderPortalEmail(input: {
       </body>
     </html>
   `;
+}
+
+function formatCurrencyMxn(amount: number | null | undefined) {
+  if (typeof amount !== "number" || !Number.isFinite(amount)) return null;
+  return new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "MXN",
+    minimumFractionDigits: 2,
+  }).format(amount);
+}
+
+function formatDate(value: string | number | Date | null | undefined) {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return new Intl.DateTimeFormat("es-MX", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+export function buildPaymentConfirmedEmail(input: {
+  courseTitle: string;
+  planLabel: string;
+  amountMxn: number;
+  courseUrl: string;
+}): PortalNotification {
+  const amountLabel = formatCurrencyMxn(input.amountMxn) ?? `${input.amountMxn} MXN`;
+
+  return {
+    subject: "Pago confirmado en Portal AUA",
+    html: renderPortalEmail({
+      preview: "Tu pago fue confirmado y tu acceso ya esta activo.",
+      title: "Pago confirmado",
+      body: `Confirmamos tu pago de ${amountLabel} para ${input.courseTitle}. Plan contratado: ${input.planLabel}. Tu acceso al programa ya esta activo en el portal.`,
+      ctaLabel: "Entrar al curso",
+      ctaUrl: input.courseUrl,
+    }),
+  };
+}
+
+export function buildRenewalPaidEmail(input: {
+  courseTitle: string;
+  amountMxn: number;
+  installmentLabel: string | null;
+  nextChargeDate: string | number | Date | null;
+  paymentsUrl: string;
+}): PortalNotification {
+  const amountLabel = formatCurrencyMxn(input.amountMxn) ?? `${input.amountMxn} MXN`;
+  const nextChargeLabel = formatDate(input.nextChargeDate);
+  const installmentCopy = input.installmentLabel ? `${input.installmentLabel}. ` : "";
+  const nextChargeCopy = nextChargeLabel
+    ? `Proximo cobro programado: ${nextChargeLabel}.`
+    : "Tu plan sigue activo en el portal.";
+
+  return {
+    subject: "Cobro exitoso de renovacion",
+    html: renderPortalEmail({
+      preview: "Tu mensualidad se proceso correctamente.",
+      title: "Renovacion procesada",
+      body: `Se proceso correctamente un cobro de ${amountLabel} para ${input.courseTitle}. ${installmentCopy}${nextChargeCopy}`,
+      ctaLabel: "Ver mis pagos",
+      ctaUrl: input.paymentsUrl,
+    }),
+  };
+}
+
+export function buildPaymentFailedEmail(input: {
+  courseTitle: string;
+  amountMxn: number | null;
+  paymentsUrl: string;
+}): PortalNotification {
+  const amountLabel = formatCurrencyMxn(input.amountMxn);
+  const amountCopy = amountLabel ? ` por ${amountLabel}` : "";
+
+  return {
+    subject: "No se pudo procesar tu cobro",
+    html: renderPortalEmail({
+      preview: "No pudimos procesar la renovacion de tu plan.",
+      title: "Cobro fallido",
+      body: `No pudimos procesar el cobro${amountCopy} de ${input.courseTitle}. Revisa tu metodo de pago para evitar afectaciones en tu acceso.`,
+      ctaLabel: "Revisar mis pagos",
+      ctaUrl: input.paymentsUrl,
+    }),
+  };
+}
+
+export function buildAccessSuspendedEmail(input: {
+  courseTitle: string;
+  paymentsUrl: string;
+}): PortalNotification {
+  return {
+    subject: "Tu acceso fue suspendido temporalmente",
+    html: renderPortalEmail({
+      preview: "Tu acceso al programa fue suspendido por falta de pago.",
+      title: "Acceso suspendido",
+      body: `El acceso a ${input.courseTitle} fue suspendido temporalmente porque tu plan presenta un cobro pendiente. En cuanto regularices el pago, el acceso se reactivara.`,
+      ctaLabel: "Regularizar pago",
+      ctaUrl: input.paymentsUrl,
+    }),
+  };
+}
+
+export function buildAccessReactivatedEmail(input: {
+  courseTitle: string;
+  courseUrl: string;
+}): PortalNotification {
+  return {
+    subject: "Tu acceso fue reactivado",
+    html: renderPortalEmail({
+      preview: "Tu acceso al programa ya fue reactivado.",
+      title: "Acceso reactivado",
+      body: `Tu acceso a ${input.courseTitle} ya fue reactivado. Puedes volver a entrar al curso y continuar con tu avance academico.`,
+      ctaLabel: "Entrar al curso",
+      ctaUrl: input.courseUrl,
+    }),
+  };
 }
 
 export async function sendTransactionalEmail(input: SendEmailInput) {

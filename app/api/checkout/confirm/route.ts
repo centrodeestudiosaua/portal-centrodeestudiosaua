@@ -3,7 +3,11 @@ import { headers } from "next/headers";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 
-import { renderPortalEmail, sendTransactionalEmail } from "@/lib/email";
+import {
+  buildPaymentConfirmedEmail,
+  renderPortalEmail,
+  sendTransactionalEmail,
+} from "@/lib/email";
 import { getStripeServerClient } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 
@@ -222,7 +226,7 @@ export async function POST(request: Request) {
 
     const { data: course } = await admin
       .from("courses")
-      .select("id, start_date_label")
+      .select("id, title, start_date_label")
       .eq("id", courseId)
       .maybeSingle();
 
@@ -511,6 +515,26 @@ export async function POST(request: Request) {
         { error: "No se pudo determinar la redireccion final" },
         { status: 500 },
       );
+    }
+
+    if (paymentIntent.status === "succeeded") {
+      const paymentEmailPayload = buildPaymentConfirmedEmail({
+        courseTitle: course.title,
+        planLabel:
+          paymentType === "installments"
+            ? `${monthsTotal} mensualidades`
+            : "Pago unico",
+        amountMxn: paymentIntent.amount ? paymentIntent.amount / 100 : 0,
+        courseUrl: `${origin}/courses/${courseSlug}?checkout=success`,
+      });
+
+      void sendTransactionalEmail({
+        to: resolvedUserEmail,
+        subject: paymentEmailPayload.subject,
+        html: paymentEmailPayload.html,
+      }).catch((emailError) => {
+        console.error("payment-confirmed-email", emailError);
+      });
     }
 
     return NextResponse.json({

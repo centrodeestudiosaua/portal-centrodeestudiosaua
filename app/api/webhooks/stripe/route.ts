@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
+import {
+  buildAccessReactivatedEmail,
+  buildAccessSuspendedEmail,
+  buildPaymentFailedEmail,
+  buildRenewalPaidEmail,
+  sendTransactionalEmail,
+} from "@/lib/email";
 import { getStripeServerClient } from "@/lib/stripe";
 
 export async function POST(request: Request) {
@@ -33,6 +40,44 @@ export async function POST(request: Request) {
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://portal-centrodeestudiosaua.vercel.app";
+
+  async function getStudentAndCourse(userId: string, courseId: string) {
+    const [{ data: profile }, { data: course }] = await Promise.all([
+      admin
+        .from("student_profiles")
+        .select("email, full_name")
+        .eq("id", userId)
+        .maybeSingle(),
+      admin
+        .from("courses")
+        .select("slug, title")
+        .eq("id", courseId)
+        .maybeSingle(),
+    ]);
+
+    return { profile, course };
+  }
+
+  async function sendPortalNotification(input: {
+    userId: string;
+    courseId: string;
+    builder:
+      | ReturnType<typeof buildRenewalPaidEmail>
+      | ReturnType<typeof buildPaymentFailedEmail>
+      | ReturnType<typeof buildAccessSuspendedEmail>
+      | ReturnType<typeof buildAccessReactivatedEmail>;
+  }) {
+    const { profile } = await getStudentAndCourse(input.userId, input.courseId);
+    if (!profile?.email) return;
+
+    await sendTransactionalEmail({
+      to: profile.email,
+      subject: input.builder.subject,
+      html: input.builder.html,
+    });
+  }
 
   async function unlockCourse(input: {
     userId: string;
@@ -147,6 +192,15 @@ export async function POST(request: Request) {
       const courseId = subscription.metadata?.course_id;
 
       if (userId && courseId) {
+        const [{ data: enrollment }, ctx] = await Promise.all([
+          admin
+            .from("enrollments")
+            .select("status")
+            .eq("student_id", userId)
+            .eq("course_id", courseId)
+            .maybeSingle(),
+          getStudentAndCourse(userId, courseId),
+        ]);
         const monthsTotal = Number(subscription.metadata?.months_total ?? "1");
         const accessExpiresAt = Number.isFinite(monthsTotal)
           ? new Date(Date.now() + monthsTotal * 30 * 24 * 60 * 60 * 1000).toISOString()
@@ -162,6 +216,169 @@ export async function POST(request: Request) {
             typeof subscription.customer === "string" ? subscription.customer : null,
           paid: true,
           accessExpiresAt,
+        });
+
+        const amountPaid = invoice.amount_paid ? invoice.amount_paid / 100 : 0;
+        const nextChargeAt =
+          typeof subscription.items.data[0]?.current_period_end === "number"
+            ? subscription.items.data[0].current_period_end * 1000
+            : typeof subscription.trial_end === "number"
+              ? subscription.trial_end * 1000
+              : null;
+        const installmentSequence =
+          typeof invoice.attempt_count === "number" && invoice.attempt_count > 0
+            ? `Mensualidad ${invoice.attempt_count + 1} de ${monthsTotal}`
+            : null;
+
+        if (amountPaid > 0) {
+          await sendPortalNotification({
+            userId,
+            courseId,
+            builder: buildRenewalPaidEmail({
+              courseTitle: ctx.course?.title ?? "Tu programa",
+              amountMxn: amountPaid,
+              installmentLabel: installmentSequence,
+              nextChargeDate: nextChargeAt,
+              paymentsUrl: `${siteUrl}/payments`,
+            }),
+          }).catch((emailError) => {
+            console.error("renewal-paid-email", emailError);
+          });
+        }
+
+        if (enrollment?.status === "suspended") {
+          await sendPortalNotification({
+            userId,
+            courseId,
+            builder: buildAccessReactivatedEmail({
+              courseTitle: ctx.course?.title ?? "Tu programa",
+              courseUrl: `${siteUrl}/courses/${ctx.course?.slug ?? ""}`,
+            }),
+          }).catch((emailError) => {
+            console.error("access-reactivated-email", emailError);
+          });
+        }
+      }
+    }
+  }
+
+  if (event.type === "invoice.payment_failed") {
+    const invoice = event.data.object;
+    const subscriptionId =
+      typeof invoice.parent?.subscription_details?.subscription === "string"
+        ? invoice.parent.subscription_details.subscription
+        : null;
+
+    if (subscriptionId) {
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const userId = subscription.metadata?.user_id;
+      const courseId = subscription.metadata?.course_id;
+
+      if (userId && courseId) {
+        await admin.from("enrollments").upsert(
+          {
+            student_id: userId,
+            course_id: courseId,
+            status: "suspended",
+            enrolled_at: new Date().toISOString(),
+          },
+          { onConflict: "student_id,course_id" },
+        );
+
+        const ctx = await getStudentAndCourse(userId, courseId);
+        const amountDue =
+          typeof invoice.amount_due === "number" ? invoice.amount_due / 100 : null;
+
+        await sendPortalNotification({
+          userId,
+          courseId,
+          builder: buildPaymentFailedEmail({
+            courseTitle: ctx.course?.title ?? "Tu programa",
+            amountMxn: amountDue,
+            paymentsUrl: `${siteUrl}/payments`,
+          }),
+        }).catch((emailError) => {
+          console.error("payment-failed-email", emailError);
+        });
+
+        await sendPortalNotification({
+          userId,
+          courseId,
+          builder: buildAccessSuspendedEmail({
+            courseTitle: ctx.course?.title ?? "Tu programa",
+            paymentsUrl: `${siteUrl}/payments`,
+          }),
+        }).catch((emailError) => {
+          console.error("access-suspended-email", emailError);
+        });
+      }
+    }
+  }
+
+  if (event.type === "customer.subscription.updated") {
+    const subscription = event.data.object;
+    const userId = subscription.metadata?.user_id;
+    const courseId = subscription.metadata?.course_id;
+
+    if (userId && courseId) {
+      const { data: enrollment } = await admin
+        .from("enrollments")
+        .select("status")
+        .eq("student_id", userId)
+        .eq("course_id", courseId)
+        .maybeSingle();
+
+      if (
+        (subscription.status === "past_due" || subscription.status === "unpaid") &&
+        enrollment?.status !== "suspended"
+      ) {
+        await admin.from("enrollments").upsert(
+          {
+            student_id: userId,
+            course_id: courseId,
+            status: "suspended",
+            enrolled_at: new Date().toISOString(),
+          },
+          { onConflict: "student_id,course_id" },
+        );
+
+        const ctx = await getStudentAndCourse(userId, courseId);
+        await sendPortalNotification({
+          userId,
+          courseId,
+          builder: buildAccessSuspendedEmail({
+            courseTitle: ctx.course?.title ?? "Tu programa",
+            paymentsUrl: `${siteUrl}/payments`,
+          }),
+        }).catch((emailError) => {
+          console.error("subscription-suspended-email", emailError);
+        });
+      }
+
+      if (
+        (subscription.status === "active" || subscription.status === "trialing") &&
+        enrollment?.status === "suspended"
+      ) {
+        await admin.from("enrollments").upsert(
+          {
+            student_id: userId,
+            course_id: courseId,
+            status: "active",
+            enrolled_at: new Date().toISOString(),
+          },
+          { onConflict: "student_id,course_id" },
+        );
+
+        const ctx = await getStudentAndCourse(userId, courseId);
+        await sendPortalNotification({
+          userId,
+          courseId,
+          builder: buildAccessReactivatedEmail({
+            courseTitle: ctx.course?.title ?? "Tu programa",
+            courseUrl: `${siteUrl}/courses/${ctx.course?.slug ?? ""}`,
+          }),
+        }).catch((emailError) => {
+          console.error("subscription-reactivated-email", emailError);
         });
       }
     }
