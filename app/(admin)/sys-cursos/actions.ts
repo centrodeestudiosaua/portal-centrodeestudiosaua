@@ -14,6 +14,8 @@ export async function createCourseWithStripe(formData: FormData) {
 
     const title = formData.get("title") as string;
     const slug = formData.get("slug") as string;
+    const description = formData.get("description") as string;
+    const thumbnailUrl = formData.get("thumbnailUrl") as string;
     const accessType = formData.get("accessType") as string; // 'one_time' or 'installments'
     const priceMxn = Number(formData.get("priceMxn"));
     const installmentMxn = Number(formData.get("installmentMxn") || priceMxn);
@@ -29,6 +31,8 @@ export async function createCourseWithStripe(formData: FormData) {
     // 1. Create Product in Stripe
     const product = await stripe.products.create({
       name: title,
+      description: description || undefined,
+      images: thumbnailUrl ? [thumbnailUrl] : undefined,
       metadata: { course_slug: slug }
     });
 
@@ -55,6 +59,8 @@ export async function createCourseWithStripe(formData: FormData) {
     const { error } = await admin.from("courses").insert({
       title,
       slug,
+      description: description || null,
+      thumbnail_url: thumbnailUrl || null,
       access_type: accessType,
       price_mxn: priceMxn,
       installment_amount_mxn: accessType === "installments" ? installmentMxn : null,
