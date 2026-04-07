@@ -2,11 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { updateLessonProgress } from "@/app/(portal)/actions";
+import { TopicProgressButton } from "@/components/portal/topic-progress-button";
 import { getCourseDetail, type CourseDetail as PortalCourseDetail } from "@/lib/portal/data";
 
 function buildModuleProgress(course: PortalCourseDetail) {
@@ -202,7 +202,7 @@ export default async function CourseDetailPage({
                           {module.label}
                         </span>
                         <div className="min-w-0">
-                          <p className="text-[1.4rem] font-bold leading-[1.15] text-primary md:text-[1.55rem]">
+                          <p className="text-[0.92rem] font-bold leading-[1.25] text-primary md:text-[0.96rem]">
                             {module.title}
                           </p>
                           <p className="text-sm text-muted-foreground">
@@ -242,7 +242,7 @@ export default async function CourseDetailPage({
                                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-secondary">
                                   Tema {topicIndex + 1}
                                 </p>
-                                <h3 className="mt-2 text-[1.8rem] font-bold leading-[1.15] text-primary md:text-[1.95rem]">
+                                <h3 className="mt-2 text-[0.94rem] font-bold leading-[1.3] text-primary md:text-[1rem]">
                                   {topic.title}
                                 </h3>
                                 <p className="mt-2 text-sm leading-7 text-muted-foreground">
@@ -267,28 +267,14 @@ export default async function CourseDetailPage({
                                     }).format(new Date(topic.sessionDate))}
                                   </p>
                                 ) : null}
-                                {course.isEnrolled && topic.progressPercent < 100 ? (
-                                  <form action={updateLessonProgress} className="mt-4">
-                                    <input type="hidden" name="lesson_id" value={topic.id} />
-                                    <input type="hidden" name="course_id" value={course.id} />
-                                    <input type="hidden" name="course_slug" value={course.slug} />
-                                    <input type="hidden" name="return_to" value="course" />
-                                    <input type="hidden" name="module_id" value={module.id} />
-                                    <input type="hidden" name="progress_percent" value="100" />
-                                    <button
-                                      type="submit"
-                                      className="inline-flex w-full items-center justify-center gap-2 rounded-[14px] border border-[#eadfd3] bg-white px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-primary transition-colors hover:border-accent hover:bg-accent/5"
-                                    >
-                                      <Circle className="h-4 w-4" />
-                                      Marcar tema
-                                    </button>
-                                  </form>
-                                ) : null}
-                                {topic.progressPercent >= 100 ? (
-                                  <div className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-[14px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
-                                    <CheckCircle2 className="h-4 w-4" />
-                                    Tema completado
-                                  </div>
+                                {course.isEnrolled ? (
+                                  <TopicProgressButton
+                                    lessonId={topic.id}
+                                    courseId={course.id}
+                                    courseSlug={course.slug}
+                                    moduleId={module.id}
+                                    completed={topic.progressPercent >= 100}
+                                  />
                                 ) : null}
                               </div>
                             </div>
