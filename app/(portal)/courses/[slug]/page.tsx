@@ -202,7 +202,7 @@ export default async function CourseDetailPage({
                           {module.label}
                         </span>
                         <div className="min-w-0">
-                          <p className="text-2xl font-bold leading-[1.1] text-primary md:text-[2rem]">
+                          <p className="text-[1.4rem] font-bold leading-[1.15] text-primary md:text-[1.55rem]">
                             {module.title}
                           </p>
                           <p className="text-sm text-muted-foreground">
