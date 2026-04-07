@@ -62,7 +62,7 @@ export default async function CourseDetailPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ checkout?: string }>;
+  searchParams: Promise<{ checkout?: string; module?: string }>;
 }) {
   await connection();
   const [{ slug }, query] = await Promise.all([params, searchParams]);
@@ -180,25 +180,29 @@ export default async function CourseDetailPage({
         </section>
       ) : null}
 
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <section id="temario" className="portal-card p-8">
-          <h2 className="portal-section-title">Temario del programa</h2>
-          <div className="mt-6">
-            <Accordion type="single" collapsible className="space-y-4">
+      <section id="temario" className="portal-card p-8">
+        <h2 className="portal-section-title">Temario del programa</h2>
+        <div className="mt-6">
+          <Accordion
+            type="single"
+            collapsible
+            defaultValue={query.module}
+            className="space-y-4"
+          >
               {modules.map((module) => (
                 <AccordionItem
                   key={module.id}
                   value={module.id}
-                  className="overflow-hidden rounded-[22px] border border-[#eadfd3] bg-white px-6 shadow-[0_14px_40px_rgba(56,42,30,0.06)]"
+                  className="overflow-hidden rounded-[22px] border border-[#eadfd3] bg-white px-5 shadow-[0_14px_40px_rgba(56,42,30,0.06)] md:px-6"
                 >
                   <AccordionTrigger className="py-5 hover:no-underline">
-                    <div className="grid w-full gap-4 pr-4 md:grid-cols-[minmax(0,1.2fr)_320px] md:items-center">
-                      <div className="flex min-w-0 items-center gap-4">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-secondary text-sm font-bold text-white">
+                    <div className="grid w-full gap-5 pr-4 md:grid-cols-[minmax(0,1fr)_300px] md:items-center">
+                      <div className="grid min-w-0 grid-cols-[44px_minmax(0,1fr)] items-start gap-4">
+                        <span className="mt-1 flex h-11 w-11 items-center justify-center rounded-[12px] bg-secondary text-sm font-bold text-white">
                           {module.label}
                         </span>
                         <div className="min-w-0">
-                          <p className="text-[2rem] font-bold leading-[1.1] text-primary md:text-[2.1rem]">
+                          <p className="text-2xl font-bold leading-[1.1] text-primary md:text-[2rem]">
                             {module.title}
                           </p>
                           <p className="text-sm text-muted-foreground">
@@ -238,7 +242,7 @@ export default async function CourseDetailPage({
                                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-secondary">
                                   Tema {topicIndex + 1}
                                 </p>
-                                <h3 className="mt-2 text-xl font-bold leading-tight text-primary">
+                                <h3 className="mt-2 text-[1.8rem] font-bold leading-[1.15] text-primary md:text-[1.95rem]">
                                   {topic.title}
                                 </h3>
                                 <p className="mt-2 text-sm leading-7 text-muted-foreground">
@@ -263,35 +267,28 @@ export default async function CourseDetailPage({
                                     }).format(new Date(topic.sessionDate))}
                                   </p>
                                 ) : null}
-                                {course.isEnrolled ? (
+                                {course.isEnrolled && topic.progressPercent < 100 ? (
                                   <form action={updateLessonProgress} className="mt-4">
                                     <input type="hidden" name="lesson_id" value={topic.id} />
                                     <input type="hidden" name="course_id" value={course.id} />
                                     <input type="hidden" name="course_slug" value={course.slug} />
                                     <input type="hidden" name="return_to" value="course" />
-                                    <input
-                                      type="hidden"
-                                      name="progress_percent"
-                                      value={topic.progressPercent >= 100 ? "0" : "100"}
-                                    />
+                                    <input type="hidden" name="module_id" value={module.id} />
+                                    <input type="hidden" name="progress_percent" value="100" />
                                     <button
                                       type="submit"
-                                      className={`inline-flex w-full items-center justify-center gap-2 rounded-[14px] border px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] transition-colors ${
-                                        topic.progressPercent >= 100
-                                          ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                                          : "border-[#eadfd3] bg-white text-primary hover:border-accent hover:bg-accent/5"
-                                      }`}
+                                      className="inline-flex w-full items-center justify-center gap-2 rounded-[14px] border border-[#eadfd3] bg-white px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-primary transition-colors hover:border-accent hover:bg-accent/5"
                                     >
-                                      {topic.progressPercent >= 100 ? (
-                                        <CheckCircle2 className="h-4 w-4" />
-                                      ) : (
-                                        <Circle className="h-4 w-4" />
-                                      )}
-                                      {topic.progressPercent >= 100
-                                        ? "Tema completado"
-                                        : "Marcar tema"}
+                                      <Circle className="h-4 w-4" />
+                                      Marcar tema
                                     </button>
                                   </form>
+                                ) : null}
+                                {topic.progressPercent >= 100 ? (
+                                  <div className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-[14px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
+                                    <CheckCircle2 className="h-4 w-4" />
+                                    Tema completado
+                                  </div>
                                 ) : null}
                               </div>
                             </div>
@@ -307,37 +304,9 @@ export default async function CourseDetailPage({
                   </AccordionContent>
                 </AccordionItem>
               ))}
-            </Accordion>
-          </div>
-        </section>
-
-        <aside className="space-y-8">
-          <section className="portal-card p-8">
-            <h2 className="portal-section-title">Beneficios</h2>
-            <ul className="mt-6 space-y-3 text-sm leading-7 text-slate-700">
-              {course.benefits.map((benefit) => (
-                <li key={benefit} className="flex items-start gap-3 border-b border-border pb-3 last:border-b-0">
-                  <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-accent" />
-                  <span>{benefit}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="portal-card p-8">
-            <h2 className="portal-section-title">Estado del avance</h2>
-            <div className="mt-6 space-y-4 text-sm text-muted-foreground">
-              <div className="rounded-[18px] border border-[#eadfd3] bg-[#fcfbf8] p-4">
-                <p>
-                  Marca cada tema desde el temario para ir completando el curso por modulo. El
-                  portal guarda el avance en esta misma vista sin mandarte a pantallas vacias
-                  de contenido.
-                </p>
-              </div>
-            </div>
-          </section>
-        </aside>
-      </div>
+          </Accordion>
+        </div>
+      </section>
     </div>
   );
 }
