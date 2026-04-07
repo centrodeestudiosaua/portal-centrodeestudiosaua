@@ -4,20 +4,14 @@ import { hasEnvVars } from "../utils";
 
 const ADMIN_HOST = "admin.centrodeestudiosaua.com";
 
-// Rutas permitidas desde el dominio admin (todo lo demás → /dashboard)
-const ADMIN_DOMAIN_WHITELIST = [
-  "/dashboard", "/leads", "/alumnos", "/pagos",
-  "/sesiones", "/cursos", "/reportes", "/ajustes",
-  "/login", "/auth", "/api", "/_next",
+const ADMIN_TABS = [
+  "dashboard", "leads", "alumnos", "pagos", 
+  "sesiones", "cursos", "reportes", "ajustes"
 ];
 
-// Rutas públicas del dominio de alumnos (no requieren auth)
 const PUBLIC_ROUTES = [
-  "/inscribirse",
-  "/recuperar-acceso",
-  "/admision",
-  "/api/checkout",
-  "/api/webhooks",
+  "/inscribirse", "/recuperar-acceso", "/admision", 
+  "/api/checkout", "/api/webhooks"
 ];
 
 export async function updateSession(request: NextRequest) {
@@ -25,31 +19,39 @@ export async function updateSession(request: NextRequest) {
   const hostname = request.headers.get("host") ?? "";
   const isAdminDomain = hostname === ADMIN_HOST || hostname.startsWith("admin.");
 
-  // ── Routing por dominio ─────────────────────────────────────────────
+  // 1. REWRITE/REDIRECT LOGIC POR DOMINIO
   if (isAdminDomain) {
-    // Raíz → panel admin
     if (pathname === "/") {
-      return NextResponse.redirect(new URL("/admin", request.url));
-    }
-    // Whitelist: solo permitir /admin/*, /login, /auth/*, /api/*, /_next/*
-    const isAllowed = ADMIN_DOMAIN_WHITELIST.some(
-      (r) => pathname === r || pathname.startsWith(r + "/"),
-    );
-    if (!isAllowed) {
-      return NextResponse.redirect(new URL("/admin", request.url));
-    }
-  } else {
-    // Dominio alumnos: bloquear acceso al panel admin
-    if (pathname === "/admin" || pathname.startsWith("/admin/")) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
-    // Raíz → /inscribirse
+
+    const baseSegment = pathname.split("/")[1];
+
+    if (ADMIN_TABS.includes(baseSegment)) {
+      // Rewrite interno: /dashboard -> /sys-dashboard
+      // Esto engaña a NextJS para usar nuestros folders sys- y evitar colisión
+      return NextResponse.rewrite(new URL(`/sys-${pathname.substring(1)}`, request.url));
+    }
+
+    // Permitir pasar libremente a archivos de auth, api, next internals, etc.
+    const isAllowedSys = pathname.startsWith("/sys-"); // Por si acaso nextjs hace fetch directo (RSC)
+    const isAllowedPublic = ["/login", "/auth", "/api", "/_next"].some(r => pathname.startsWith(r));
+
+    if (!isAllowedPublic && !isAllowedSys) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+  } else {
+    // Dominio normal: bloquear rutas de admin transparentes y las prefijadas sys-
+    const baseSegment = pathname.split("/")[1];
+    if (pathname.startsWith("/sys-") || pathname === "/admin") {
+      return NextResponse.redirect(new URL("/dashboard", request.url)); // dash de estudiantes
+    }
     if (pathname === "/") {
       return NextResponse.redirect(new URL("/inscribirse", request.url));
     }
   }
 
-  // ── Auth session (Supabase) ─────────────────────────────────────────
+  // 2. SUPABASE AUTH SESSION LOGIC
   let supabaseResponse = NextResponse.next({ request });
 
   if (!hasEnvVars) {
@@ -61,49 +63,44 @@ export async function updateSession(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
+        getAll() { return request.cookies.getAll(); },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value),
-          );
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options),
+            supabaseResponse.cookies.set(name, value, options)
           );
         },
       },
-    },
+    }
   );
 
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
 
   const authPagesForGuestsOnly = new Set([
-    "/auth/login",
-    "/auth/sign-up",
-    "/auth/forgot-password",
-    "/auth/sign-up-success",
-    "/inscribirse",
-    "/recuperar-acceso",
+    "/auth/login", "/auth/sign-up", "/auth/forgot-password",
+    "/auth/sign-up-success", "/inscribirse", "/recuperar-acceso",
   ]);
 
+  // Si ya tiene sesión e intenta ver sign-up/login
   if (user && authPagesForGuestsOnly.has(pathname)) {
     const url = request.nextUrl.clone();
-    // En dominio admin, redirigir al panel admin
-    url.pathname = isAdminDomain ? "/admin" : "/dashboard";
+    url.pathname = isAdminDomain ? "/dashboard" : "/dashboard";
     return NextResponse.redirect(url);
   }
 
-  // Rutas protegidas: requieren auth
-  const isPublic =
-    pathname === "/" ||
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/auth") ||
-    PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"));
+  // Rutas que SI pueden verse sin login
+  const isPublic = 
+    pathname === "/" || 
+    pathname.startsWith("/login") || 
+    pathname.startsWith("/auth") || 
+    PUBLIC_ROUTES.some(r => pathname === r || pathname.startsWith(r + "/"));
 
-  if (!user && !isPublic) {
+  // Rutas sys- y dashboard de estudiantes requieren auth
+  const isProtectedTab = ADMIN_TABS.some(t => pathname.startsWith("/" + t)) || pathname.startsWith("/sys-") || pathname.startsWith("/dashboard");
+
+  if (!user && !isPublic && isProtectedTab) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
