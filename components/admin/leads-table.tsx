@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { Download, Search, Plus } from "lucide-react";
+import { useState, useTransition, useRef } from "react";
+import { Download, Search, Plus, Upload } from "lucide-react";
+import Papa from "papaparse";
 
 type Lead = {
   id: string;
@@ -63,6 +64,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("todos");
   const [isPending, startTransition] = useTransition();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = leads.filter((l) => {
     const matchSearch =
@@ -77,6 +79,62 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
     startTransition(async () => {
       await updateLeadStatus(id, status);
       router.refresh();
+    });
+  }
+
+  function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const rows = results.data as Record<string, string>[];
+        const newLeads = rows.map(r => {
+          // Normalize properties from standard CSV headers
+          const name = r["Nombre"] || r["full_name"] || "";
+          const email = r["Email"] || r["email"] || "";
+          if (!name || !email) return null;
+
+          // Map given "Estatus" (e.g. Lead, Contactado) to our standard enum
+          const rawStatus = (r["Estatus"] || r["status"] || "nuevo").toLowerCase();
+          let parsedStatus = "nuevo";
+          if (rawStatus.includes("contact")) parsedStatus = "contactado";
+          if (rawStatus.includes("seguimiento")) parsedStatus = "en_seguimiento";
+          if (rawStatus.includes("ganado")) parsedStatus = "cerrado_ganado";
+          if (rawStatus.includes("perdido")) parsedStatus = "cerrado_perdido";
+
+          return {
+            full_name: name,
+            email: email,
+            phone: r["Teléfono"] || r["phone"] || r["Telefono"] || null,
+            company: r["Empresa"] || r["company"] || null,
+            education_level: r["Grado de Estudios"] || r["education_level"] || r["Grado"] || null,
+            city: r["Ciudad"] || r["city"] || null,
+            source: r["Fuente"] || r["source"] || "Importado",
+            status: parsedStatus
+          };
+        }).filter(Boolean);
+
+        if (newLeads.length === 0) return alert("El CSV no contiene la estructura esperada: falta Nombre e Email.");
+        
+        startTransition(async () => {
+          const res = await fetch("/api/admin/leads/import", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ leads: newLeads })
+          });
+          if (res.ok) {
+            alert(`✅ ${newLeads.length} leads importados exitosamente.`);
+            router.refresh();
+          } else {
+            console.error(await res.json());
+            alert("❌ Hubo un error procesando el CSV.");
+          }
+          if (fileInputRef.current) fileInputRef.current.value = "";
+        });
+      }
     });
   }
 
@@ -116,6 +174,23 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
           >
             <Download className="h-4 w-4" />
             Exportar CSV
+          </button>
+
+          {/* Import */}
+          <input 
+            type="file" 
+            accept=".csv" 
+            className="hidden" 
+            ref={fileInputRef} 
+            onChange={handleImport} 
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isPending}
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-slate-800 px-4 text-sm font-semibold text-white transition hover:bg-slate-900 disabled:opacity-50"
+          >
+            <Upload className="h-4 w-4" />
+            {isPending ? "Importando..." : "Importar CSV"}
           </button>
         </div>
       </div>
