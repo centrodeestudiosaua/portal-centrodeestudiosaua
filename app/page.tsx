@@ -1,9 +1,15 @@
 import { AuthButton } from "@/components/auth-button";
 import { Button } from "@/components/ui/button";
+import { buildAdminUrl } from "@/lib/admin-url";
 import Link from "next/link";
 import { Suspense } from "react";
 
 export default function Home() {
+  const adminHref =
+    process.env.NODE_ENV === "development"
+      ? "/sys-dashboard"
+      : buildAdminUrl("/sys-dashboard");
+
   return (
     <main className="min-h-screen bg-primary text-white">
       <nav className="border-b border-white/10">
@@ -41,7 +47,7 @@ export default function Home() {
               asChild
               className="rounded-none bg-[#9B1D20] px-8 py-6 text-xs font-bold uppercase tracking-[0.18em] text-white hover:bg-[#7a171a]"
             >
-              <Link href="/sys-dashboard">Panel Administrador</Link>
+              <Link href={adminHref}>Panel Administrador</Link>
             </Button>
             <Button
               asChild

@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { getAdminUrlForBrowser } from "@/lib/admin-url";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,7 +42,8 @@ export function LoginForm({
            .single();
            
          if (profile?.role === "admin") {
-           router.push("/sys-dashboard");
+           window.location.assign(getAdminUrlForBrowser("/sys-dashboard"));
+           return;
          } else {
            router.push("/dashboard");
          }

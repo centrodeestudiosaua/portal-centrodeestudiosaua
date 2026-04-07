@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Shield } from "lucide-react";
 
 import { sidebarItems, settingsItem } from "@/components/portal/mock-data";
+import { getAdminUrlForBrowser } from "@/lib/admin-url";
 import { cn } from "@/lib/utils";
 
 export function PortalSidebar({
@@ -25,6 +26,7 @@ export function PortalSidebar({
     .slice(0, 2)
     .map((chunk) => chunk[0]?.toUpperCase())
     .join("") || "A";
+  const adminHref = getAdminUrlForBrowser("/sys-dashboard");
 
   return (
     <aside className="hidden w-64 bg-[hsl(var(--portal-sidebar))] text-white lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex lg:flex-col">
@@ -77,7 +79,7 @@ export function PortalSidebar({
         {user?.role === "admin" && (
           <div className="mb-6 flex justify-center">
             <Link
-              href="/sys-dashboard"
+              href={adminHref}
               className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#9B1D20]/20 border border-[#9B1D20]/30 py-2.5 text-xs font-bold uppercase tracking-widest text-[#e87b7e] transition-all hover:bg-[#9B1D20]/30 hover:text-white hover:-translate-y-0.5"
             >
               <Shield className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
