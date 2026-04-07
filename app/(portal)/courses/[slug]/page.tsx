@@ -2,10 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { CheckCircle2, Clock3 } from "lucide-react";
+import { CheckCircle2, Circle } from "lucide-react";
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { updateLessonProgress } from "@/app/(portal)/actions";
 import { getCourseDetail, type CourseDetail as PortalCourseDetail } from "@/lib/portal/data";
 
 function buildModuleProgress(course: PortalCourseDetail) {
@@ -96,27 +97,27 @@ export default async function CourseDetailPage({
             </p>
 
             <div className="mt-8 grid gap-4 md:grid-cols-3">
-              <div className="rounded-xl border border-border bg-navy-deep p-4 text-white">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">
+              <div className="rounded-xl border border-[#eadfd3] bg-[#fcfbf8] p-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
                   Inicio
                 </p>
-                <p className="mt-2 text-sm font-semibold text-white">
+                <p className="mt-2 text-sm font-semibold text-primary">
                   {course.startDateLabel || "Por definir"}
                 </p>
               </div>
-              <div className="rounded-xl border border-border bg-navy-deep p-4 text-white">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">
+              <div className="rounded-xl border border-[#eadfd3] bg-[#fcfbf8] p-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
                   Modalidad
                 </p>
-                <p className="mt-2 text-sm font-semibold text-white">
+                <p className="mt-2 text-sm font-semibold text-primary">
                   {course.modalityLabel || "Online"}
                 </p>
               </div>
-              <div className="rounded-xl border border-border bg-navy-deep p-4 text-white">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">
+              <div className="rounded-xl border border-[#eadfd3] bg-[#fcfbf8] p-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
                   Duracion
                 </p>
-                <p className="mt-2 text-sm font-semibold text-white">
+                <p className="mt-2 text-sm font-semibold text-primary">
                   {course.durationLabel || "Programa activo"}
                 </p>
               </div>
@@ -179,7 +180,7 @@ export default async function CourseDetailPage({
         </section>
       ) : null}
 
-      <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
         <section id="temario" className="portal-card p-8">
           <h2 className="portal-section-title">Temario del programa</h2>
           <div className="mt-6">
@@ -191,13 +192,15 @@ export default async function CourseDetailPage({
                   className="overflow-hidden rounded-[22px] border border-[#eadfd3] bg-white px-6 shadow-[0_14px_40px_rgba(56,42,30,0.06)]"
                 >
                   <AccordionTrigger className="py-5 hover:no-underline">
-                    <div className="flex w-full flex-col gap-4 pr-4 md:flex-row md:items-center md:justify-between">
-                      <div className="flex items-center gap-4">
+                    <div className="grid w-full gap-4 pr-4 md:grid-cols-[minmax(0,1.2fr)_320px] md:items-center">
+                      <div className="flex min-w-0 items-center gap-4">
                         <span className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-secondary text-sm font-bold text-white">
                           {module.label}
                         </span>
-                        <div>
-                          <p className="text-lg font-bold text-primary">{module.title}</p>
+                        <div className="min-w-0">
+                          <p className="text-[2rem] font-bold leading-[1.1] text-primary md:text-[2.1rem]">
+                            {module.title}
+                          </p>
                           <p className="text-sm text-muted-foreground">
                             {module.sessionsCount} sesiones
                           </p>
@@ -230,19 +233,19 @@ export default async function CourseDetailPage({
                             key={topic.id}
                             className="rounded-[18px] border border-[#efe7db] bg-[#fcfbf8] p-5"
                           >
-                            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                              <div>
+                            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                              <div className="min-w-0 flex-1">
                                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-secondary">
                                   Tema {topicIndex + 1}
                                 </p>
-                                <h3 className="mt-2 text-base font-bold text-primary">
+                                <h3 className="mt-2 text-xl font-bold leading-tight text-primary">
                                   {topic.title}
                                 </h3>
                                 <p className="mt-2 text-sm leading-7 text-muted-foreground">
                                   {topic.description || "Contenido academico del modulo."}
                                 </p>
                               </div>
-                              <div className="md:w-[180px]">
+                              <div className="md:w-[210px]">
                                 <div className="mb-2 flex items-center justify-between text-xs font-semibold text-slate-500">
                                   <span>Avance</span>
                                   <span className="text-primary">{topic.progressPercent}%</span>
@@ -259,6 +262,36 @@ export default async function CourseDetailPage({
                                       dateStyle: "medium",
                                     }).format(new Date(topic.sessionDate))}
                                   </p>
+                                ) : null}
+                                {course.isEnrolled ? (
+                                  <form action={updateLessonProgress} className="mt-4">
+                                    <input type="hidden" name="lesson_id" value={topic.id} />
+                                    <input type="hidden" name="course_id" value={course.id} />
+                                    <input type="hidden" name="course_slug" value={course.slug} />
+                                    <input type="hidden" name="return_to" value="course" />
+                                    <input
+                                      type="hidden"
+                                      name="progress_percent"
+                                      value={topic.progressPercent >= 100 ? "0" : "100"}
+                                    />
+                                    <button
+                                      type="submit"
+                                      className={`inline-flex w-full items-center justify-center gap-2 rounded-[14px] border px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] transition-colors ${
+                                        topic.progressPercent >= 100
+                                          ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                          : "border-[#eadfd3] bg-white text-primary hover:border-accent hover:bg-accent/5"
+                                      }`}
+                                    >
+                                      {topic.progressPercent >= 100 ? (
+                                        <CheckCircle2 className="h-4 w-4" />
+                                      ) : (
+                                        <Circle className="h-4 w-4" />
+                                      )}
+                                      {topic.progressPercent >= 100
+                                        ? "Tema completado"
+                                        : "Marcar tema"}
+                                    </button>
+                                  </form>
                                 ) : null}
                               </div>
                             </div>
@@ -279,33 +312,6 @@ export default async function CourseDetailPage({
         </section>
 
         <aside className="space-y-8">
-          {course.isEnrolled ? (
-            <section className="portal-card p-8">
-              <h2 className="portal-section-title">Proximas sesiones</h2>
-              <div className="mt-6 space-y-4">
-                {course.sessions.map((session) => (
-                  <article
-                    key={session.id}
-                    className="rounded-xl border border-[#eadfd3] bg-white p-4 text-card-foreground shadow-[0_14px_40px_rgba(56,42,30,0.06)]"
-                  >
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
-                      {new Intl.DateTimeFormat("es-MX", {
-                        dateStyle: "full",
-                        timeStyle: "short",
-                      }).format(new Date(session.startsAt))}
-                    </p>
-                    <h3 className="mt-2 text-base font-bold text-primary">
-                      {session.title}
-                    </h3>
-                    <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                      {session.description}
-                    </p>
-                  </article>
-                ))}
-              </div>
-            </section>
-          ) : null}
-
           <section className="portal-card p-8">
             <h2 className="portal-section-title">Beneficios</h2>
             <ul className="mt-6 space-y-3 text-sm leading-7 text-slate-700">
@@ -321,12 +327,11 @@ export default async function CourseDetailPage({
           <section className="portal-card p-8">
             <h2 className="portal-section-title">Estado del avance</h2>
             <div className="mt-6 space-y-4 text-sm text-muted-foreground">
-              <div className="flex items-start gap-3 rounded-[18px] border border-[#eadfd3] bg-[#fcfbf8] p-4">
-                <Clock3 className="mt-1 h-4 w-4 shrink-0 text-secondary" />
+              <div className="rounded-[18px] border border-[#eadfd3] bg-[#fcfbf8] p-4">
                 <p>
-                  El curso ya no se presenta como lista de lecciones. Tu avance visible se
-                  concentra por modulo para que el alumno vea el temario completo y no una
-                  pantalla vacia de contenidos.
+                  Marca cada tema desde el temario para ir completando el curso por modulo. El
+                  portal guarda el avance en esta misma vista sin mandarte a pantallas vacias
+                  de contenido.
                 </p>
               </div>
             </div>

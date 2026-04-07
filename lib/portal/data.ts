@@ -512,10 +512,11 @@ function toCover(thumbnailUrl: string | null, coverImageUrl: string | null) {
     return "/diplomadoamparo.png";
   }
 
-  return (
-    chosen ||
-    "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=1200&q=80"
-  );
+  if (chosen && /^(https?:\/\/|\/)/.test(chosen)) {
+    return chosen;
+  }
+
+  return "/diplomadoamparo.png";
 }
 
 function getPurchaseOptions(course: {
@@ -1167,6 +1168,7 @@ export async function getCourseDetail(slug: string): Promise<CourseDetail | null
       description,
       long_description,
       thumbnail_url,
+      cover_image_url,
       badge_text,
       urgency_text,
       duration_label,
@@ -1233,7 +1235,7 @@ export async function getCourseDetail(slug: string): Promise<CourseDetail | null
     title: course.title,
     description: course.description,
     longDescription: course.long_description,
-    thumbnailUrl: course.thumbnail_url,
+    thumbnailUrl: toCover(course.thumbnail_url, course.cover_image_url),
     badgeText: course.badge_text,
     urgencyText: course.urgency_text,
     durationLabel: course.duration_label,

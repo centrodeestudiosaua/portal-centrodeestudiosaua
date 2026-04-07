@@ -11,6 +11,7 @@ export async function updateLessonProgress(formData: FormData) {
   const lessonId = String(formData.get("lesson_id") || "");
   const courseId = String(formData.get("course_id") || "");
   const courseSlug = String(formData.get("course_slug") || "");
+  const returnTo = String(formData.get("return_to") || "");
   const progressPercent = Number(formData.get("progress_percent") || 0);
   const completed = progressPercent >= 100;
 
@@ -56,6 +57,9 @@ export async function updateLessonProgress(formData: FormData) {
   revalidatePath("/courses");
   revalidatePath(`/courses/${courseSlug}`);
   revalidatePath(`/lessons/${lessonId}`);
+  if (returnTo === "course") {
+    redirect(`/courses/${courseSlug}#temario`);
+  }
   redirect(`/lessons/${lessonId}`);
 }
 

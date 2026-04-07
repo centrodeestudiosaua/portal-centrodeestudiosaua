@@ -90,7 +90,7 @@ export function CheckoutPageContent({ course }: { course: CourseDetail }) {
             </h2>
           </div>
 
-          <div className="flex flex-col gap-5 border border-border bg-background p-5 md:flex-row">
+          <div className="flex flex-col gap-5 rounded-[20px] border border-[#eadfd3] bg-white p-5 shadow-[0_14px_40px_rgba(56,42,30,0.06)] md:flex-row">
             <div className="h-28 w-full shrink-0 overflow-hidden bg-muted md:w-28">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -109,7 +109,7 @@ export function CheckoutPageContent({ course }: { course: CourseDetail }) {
                   <h3 className="text-2xl font-bold text-primary">
                     {course.title}
                   </h3>
-                  <p className="mt-2 max-w-2xl text-sm leading-7 text-muted-foreground">
+                    <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600">
                     {course.description}
                   </p>
                 </div>
@@ -146,10 +146,10 @@ export function CheckoutPageContent({ course }: { course: CourseDetail }) {
                   key={option.code}
                   type="button"
                   onClick={() => setSelectedCode(option.code)}
-                  className={`relative border p-5 text-left transition-colors ${
+                  className={`relative rounded-[18px] border p-5 text-left transition-colors ${
                     selected
                       ? "border-accent bg-accent/5"
-                      : "border-border bg-background hover:border-accent/50"
+                      : "border-[#eadfd3] bg-white hover:border-accent/50"
                   }`}
                 >
                   {presentation.badge ? (
@@ -169,7 +169,7 @@ export function CheckoutPageContent({ course }: { course: CourseDetail }) {
                       {presentation.suffix}
                     </span>
                   </div>
-                  <p className="mt-3 text-xs leading-6 text-muted-foreground">
+                  <p className="mt-3 text-xs leading-6 text-slate-500">
                     {presentation.caption}
                   </p>
                 </button>
@@ -195,12 +195,12 @@ export function CheckoutPageContent({ course }: { course: CourseDetail }) {
                 : `Se cobrara ${selectedPresentation.amount} ${selectedPresentation.suffix} conforme al plan seleccionado.`}
             </div>
 
-            <div className="border border-border bg-background p-5">
+            <div className="rounded-[18px] border border-[#eadfd3] bg-white p-5 shadow-[0_14px_40px_rgba(56,42,30,0.05)]">
               <div className="flex items-center gap-3 text-sm font-semibold text-primary">
                 <CreditCard className="h-4 w-4 text-accent" />
                 Tarjeta
               </div>
-              <div className="mt-4 flex items-start gap-3 text-sm text-muted-foreground">
+              <div className="mt-4 flex items-start gap-3 text-sm text-slate-600">
                 <LockKeyhole className="mt-0.5 h-4 w-4 text-emerald-600" />
                 <p className="leading-7">
                   El pago se procesa en una terminal segura de Stripe dentro
@@ -210,7 +210,7 @@ export function CheckoutPageContent({ course }: { course: CourseDetail }) {
               </div>
             </div>
 
-            <div className="mt-2 rounded-none border border-border bg-white p-4">
+            <div className="mt-2 rounded-[20px] border border-[#eadfd3] bg-white p-4 shadow-[0_14px_40px_rgba(56,42,30,0.05)]">
               <StripeElementsCheckout
                 courseId={course.id}
                 courseSlug={course.slug}
@@ -222,40 +222,40 @@ export function CheckoutPageContent({ course }: { course: CourseDetail }) {
       </div>
 
       <aside className="space-y-6">
-        <section className="bg-primary p-8 text-white">
-          <h2 className="text-lg font-bold text-accent">Resumen de Inversion</h2>
+        <section className="portal-card p-8">
+          <h2 className="text-lg font-bold text-primary">Resumen de Inversion</h2>
 
           <div className="mt-6 space-y-4 text-sm">
-            <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-3">
-              <span className="text-white/70">Programa</span>
+            <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
+              <span className="text-slate-500">Programa</span>
               <span className="max-w-[160px] text-right font-semibold">
                 {course.title}
               </span>
             </div>
-            <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-3">
-              <span className="text-white/70">Precio total</span>
-              <span className="font-semibold">
+            <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
+              <span className="text-slate-500">Precio total</span>
+              <span className="font-semibold text-primary">
                 {formatCurrency(course.priceMxn) ?? "Consultar"}
               </span>
             </div>
-            <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-3">
-              <span className="text-white/70">Plan</span>
+            <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
+              <span className="text-slate-500">Plan</span>
               <span className="font-semibold text-accent">
                 {selectedOption.label}
               </span>
             </div>
-            <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-3">
-              <span className="text-white/70">Metodo</span>
-              <span className="font-semibold">Tarjeta</span>
+            <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
+              <span className="text-slate-500">Metodo</span>
+              <span className="font-semibold text-primary">Tarjeta</span>
             </div>
           </div>
 
-          <div className="mt-8 border-t border-white/10 pt-6">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">
+          <div className="mt-8 border-t border-border pt-6">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
               Cobro {selectedOption.mode === "subscription" ? "mensual" : "inmediato"}
             </p>
-            <p className="mt-3 text-4xl font-bold">{selectedPresentation.amount}</p>
-            <p className="mt-2 text-xs leading-6 text-white/70">
+            <p className="mt-3 text-4xl font-bold text-primary">{selectedPresentation.amount}</p>
+            <p className="mt-2 text-xs leading-6 text-slate-500">
               {selectedOption.description}
             </p>
           </div>
