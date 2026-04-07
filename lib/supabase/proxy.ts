@@ -54,6 +54,7 @@ export async function updateSession(request: NextRequest) {
     "/auth/forgot-password",
     "/auth/sign-up-success",
     "/inscribirse",
+    "/recuperar-acceso",
   ]);
 
   if (user && authPagesForGuestsOnly.has(pathname)) {
@@ -68,6 +69,7 @@ export async function updateSession(request: NextRequest) {
     !pathname.startsWith("/login") &&
     !pathname.startsWith("/auth") &&
     !pathname.startsWith("/inscribirse") &&
+    !pathname.startsWith("/recuperar-acceso") &&
     !pathname.startsWith("/admision") &&
     !pathname.startsWith("/api/checkout") &&
     !pathname.startsWith("/api/webhooks")

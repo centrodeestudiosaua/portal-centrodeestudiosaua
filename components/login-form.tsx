@@ -64,7 +64,7 @@ export function LoginForm({
               Contrasena
             </Label>
             <Link
-              href="/auth/forgot-password"
+              href="/recuperar-acceso"
               className="inline-block text-sm font-semibold text-[#9B3328] underline-offset-4 hover:underline"
             >
               Olvidaste tu contrasena?
@@ -91,7 +91,7 @@ export function LoginForm({
           Conexion segura
         </div>
         <div className="text-center text-sm font-semibold text-[#9B3328]">
-          <Link href="/auth/forgot-password" className="hover:underline">
+          <Link href="/recuperar-acceso" className="hover:underline">
             Olvidaste tu contrasena?
           </Link>
         </div>

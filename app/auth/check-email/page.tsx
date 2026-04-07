@@ -38,7 +38,7 @@ export default async function CheckEmailPage({
             Ir a iniciar sesion
           </Link>
           <Link
-            href="/auth/forgot-password"
+            href="/recuperar-acceso"
             className="inline-flex items-center justify-center rounded-[14px] border border-border px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-primary"
           >
             Volver a enviar correo
