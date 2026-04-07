@@ -4,10 +4,23 @@ const nextConfig: NextConfig = {
   output: "standalone",
   async redirects() {
     return [
+      // Raíz → landing de inscripción
       {
         source: "/",
         destination: "/inscribirse",
         permanent: true,
+      },
+      // Ruta limpia /login en lugar de /auth/login
+      {
+        source: "/auth/login",
+        destination: "/login",
+        permanent: true,
+      },
+      // Ocultar el resto de rutas /auth/* redirigiéndolas a /inscribirse
+      {
+        source: "/auth/:path*",
+        destination: "/inscribirse",
+        permanent: false,
       },
     ];
   },
