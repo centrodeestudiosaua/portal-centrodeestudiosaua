@@ -4,10 +4,10 @@ import type { DashboardStat } from "@/components/portal/types";
 
 const toneStyles = {
   info: {
-    icon: "bg-blue-50 text-blue-600",
+    icon: "bg-[rgba(197,160,89,0.14)] text-accent",
   },
   success: {
-    icon: "bg-green-50 text-green-600",
+    icon: "bg-[rgba(145,26,38,0.10)] text-secondary",
   },
 };
 

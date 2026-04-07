@@ -68,8 +68,12 @@ export default async function LessonPage({
                 <input type="hidden" name="progress_percent" value={value} />
                 <Button
                   type="submit"
-                  variant={lesson.progressPercent === value ? "secondary" : "outline"}
-                  className="w-full rounded-none px-4 py-2 text-xs font-bold uppercase tracking-[0.18em]"
+                  variant="default"
+                  className={
+                    lesson.progressPercent === value
+                      ? "w-full rounded-xl border border-[#b7924d] bg-accent px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-primary hover:bg-[#b7924d]"
+                      : "w-full rounded-xl border border-[#9B3328] bg-secondary px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white hover:bg-[#812821]"
+                  }
                 >
                   Marcar {value}%
                 </Button>
