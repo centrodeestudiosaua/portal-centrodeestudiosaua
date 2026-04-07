@@ -18,16 +18,16 @@ import {
 import { cn } from "@/lib/utils";
 
 const adminNavItems = [
-  { label: "Dashboard",  href: "/dashboard",  icon: LayoutDashboard,  exact: true },
-  { label: "Leads",      href: "/leads",      icon: Users },
-  { label: "Alumnos",   href: "/alumnos",   icon: GraduationCap },
-  { label: "Pagos",     href: "/pagos",     icon: CreditCard },
-  { label: "Sesiones",  href: "/sesiones",  icon: Video },
-  { label: "Cursos",    href: "/cursos",    icon: BookOpen },
-  { label: "Reportes",  href: "/reportes",  icon: BarChart3 },
+  { label: "Dashboard",  href: "/sys-dashboard",  icon: LayoutDashboard,  exact: true },
+  { label: "Leads",      href: "/sys-leads",      icon: Users },
+  { label: "Alumnos",   href: "/sys-alumnos",   icon: GraduationCap },
+  { label: "Pagos",     href: "/sys-pagos",     icon: CreditCard },
+  { label: "Sesiones",  href: "/sys-sesiones",  icon: Video },
+  { label: "Cursos",    href: "/sys-cursos",    icon: BookOpen },
+  { label: "Reportes",  href: "/sys-reportes",  icon: BarChart3 },
 ];
 
-const adminSettingsItem = { label: "Ajustes", href: "/ajustes", icon: Settings };
+const adminSettingsItem = { label: "Ajustes", href: "/sys-ajustes", icon: Settings };
 
 export function AdminSidebar({
   user,

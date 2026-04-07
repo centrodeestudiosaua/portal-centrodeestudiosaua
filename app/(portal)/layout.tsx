@@ -19,6 +19,7 @@ export default async function PortalLayout({
           fullName: user?.profile?.full_name || user?.email || "Alumno AUA",
           email: user?.email,
           membershipLabel: user?.profile?.membership_label,
+          role: user?.profile?.role,
         }}
       />
       <div className="min-h-screen flex-1 lg:pl-64">

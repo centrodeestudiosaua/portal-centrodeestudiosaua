@@ -519,6 +519,30 @@ function toCover(thumbnailUrl: string | null, coverImageUrl: string | null) {
   return "/diplomadoamparo.png";
 }
 
+function buildSyllabusFromModules(
+  modules:
+    | Array<{
+        title?: string | null;
+        sort_order?: number | null;
+        course_lessons?: { id: string }[] | null;
+      }>
+    | null
+    | undefined,
+  fallback: Array<{ modulo?: string; titulo?: string; sesiones?: number }> | null | undefined,
+) {
+  if (Array.isArray(modules) && modules.length > 0) {
+    return [...modules]
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+      .map((module, index) => ({
+        modulo: String(index + 1).padStart(2, "0"),
+        titulo: module.title ?? `Modulo ${index + 1}`,
+        sesiones: Array.isArray(module.course_lessons) ? module.course_lessons.length : 0,
+      }));
+  }
+
+  return Array.isArray(fallback) ? fallback : [];
+}
+
 function getPurchaseOptions(course: {
   price_mxn?: number | null;
   installment_amount_mxn?: number | null;
@@ -1394,7 +1418,14 @@ export const getPublicAdmissionCourse = cache(
         stripe_monthly_price_id,
         benefits,
         target_audience,
-        syllabus
+        syllabus,
+        course_modules (
+          title,
+          sort_order,
+          course_lessons (
+            id
+          )
+        )
       `,
       )
       .eq("slug", slug)
@@ -1422,7 +1453,7 @@ export const getPublicAdmissionCourse = cache(
       targetAudience: Array.isArray(course.target_audience)
         ? course.target_audience
         : [],
-      syllabus: Array.isArray(course.syllabus) ? course.syllabus : [],
+      syllabus: buildSyllabusFromModules(course.course_modules, course.syllabus),
       purchaseOptions: getPurchaseOptions(course),
     };
   },

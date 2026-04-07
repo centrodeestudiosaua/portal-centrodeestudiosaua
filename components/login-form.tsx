@@ -27,12 +27,28 @@ export function LoginForm({
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) throw error;
-      router.push("/dashboard");
+      
+      if (authData?.user) {
+         const { data: profile } = await supabase
+           .from("student_profiles")
+           .select("role")
+           .eq("id", authData.user.id)
+           .single();
+           
+         if (profile?.role === "admin") {
+           router.push("/sys-dashboard");
+         } else {
+           router.push("/dashboard");
+         }
+      } else {
+         router.push("/dashboard");
+      }
+
       router.refresh();
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");

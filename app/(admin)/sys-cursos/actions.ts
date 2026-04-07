@@ -4,6 +4,68 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { getStripeServerClient } from "@/lib/stripe";
 import { revalidatePath } from "next/cache";
 
+function getAdminClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+}
+
+export async function createDraftCourse() {
+  try {
+    const admin = getAdminClient();
+    const mockId = Math.random().toString(36).substring(2, 8);
+    const slug = `borrador-${mockId}`;
+
+    const { data: course, error } = await admin
+      .from("courses")
+      .insert({
+        title: "Nuevo Programa Académico",
+        slug,
+        is_published: false,
+      })
+      .select("id")
+      .single();
+
+    if (error || !course) throw new Error(error?.message || "No se pudo crear el borrador");
+
+    revalidatePath("/sys-cursos");
+    return { success: true, courseId: course.id };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function deleteCourse(courseId: string) {
+  try {
+    const admin = getAdminClient();
+
+    const { data: modules } = await admin
+      .from("course_modules")
+      .select("id")
+      .eq("course_id", courseId);
+
+    const moduleIds = (modules ?? []).map((module: { id: string }) => module.id);
+
+    await admin.from("course_sessions").delete().eq("course_id", courseId);
+
+    if (moduleIds.length > 0) {
+      await admin.from("course_lessons").delete().in("module_id", moduleIds);
+    }
+
+    await admin.from("course_modules").delete().eq("course_id", courseId);
+
+    const { error } = await admin.from("courses").delete().eq("id", courseId);
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/sys-cursos");
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
 export async function createCourseWithStripe(formData: FormData) {
   try {
     const admin = createSupabaseClient(

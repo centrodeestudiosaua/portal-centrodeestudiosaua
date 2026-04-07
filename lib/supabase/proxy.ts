@@ -17,28 +17,57 @@ const PUBLIC_ROUTES = [
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hostname = request.headers.get("host") ?? "";
-  const isAdminDomain = hostname === ADMIN_HOST || hostname.startsWith("admin.");
+  const hostWithoutPort = hostname.split(":")[0] ?? "";
+  const isLocalhost =
+    hostWithoutPort === "localhost" ||
+    hostWithoutPort === "127.0.0.1";
+  const isAdminDomain =
+    hostWithoutPort === ADMIN_HOST || hostWithoutPort.startsWith("admin.");
+  const isLocalAdminPath =
+    isLocalhost &&
+    (pathname === "/admin" ||
+      pathname.startsWith("/admin/") ||
+      pathname.startsWith("/sys-"));
+  const isAdminContext = isAdminDomain || isLocalAdminPath;
+  const adminPath = isAdminDomain
+    ? pathname
+    : isLocalAdminPath
+      ? pathname === "/admin"
+        ? "/"
+        : pathname.startsWith("/admin/")
+          ? pathname.slice("/admin".length)
+          : pathname
+      : pathname;
 
   // 1. REWRITE/REDIRECT LOGIC POR DOMINIO
-  if (isAdminDomain) {
-    if (pathname === "/") {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+  if (isAdminContext) {
+    if (adminPath === "/") {
+      return NextResponse.redirect(new URL("/sys-dashboard", request.url));
     }
 
-    const baseSegment = pathname.split("/")[1];
+    const baseSegment = adminPath.split("/")[1];
 
     if (ADMIN_TABS.includes(baseSegment)) {
-      // Rewrite interno: /dashboard -> /sys-dashboard
-      // Esto engaña a NextJS para usar nuestros folders sys- y evitar colisión
-      return NextResponse.rewrite(new URL(`/sys-${pathname.substring(1)}`, request.url));
+      return NextResponse.rewrite(new URL(`/sys-${adminPath.substring(1)}`, request.url));
     }
 
-    // Permitir pasar libremente a archivos de auth, api, next internals, etc.
-    const isAllowedSys = pathname.startsWith("/sys-"); // Por si acaso nextjs hace fetch directo (RSC)
-    const isAllowedPublic = ["/login", "/auth", "/api", "/_next"].some(r => pathname.startsWith(r));
+    const isAllowedSys = adminPath.startsWith("/sys-");
+    const isAllowedPublic = ["/login", "/auth", "/api", "/_next"].some((route) =>
+      adminPath.startsWith(route),
+    );
 
     if (!isAllowedPublic && !isAllowedSys) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      return NextResponse.redirect(new URL("/sys-dashboard", request.url));
+    }
+
+    if (!isAdminDomain && adminPath !== pathname) {
+      if (adminPath === "/login") {
+        return NextResponse.redirect(new URL("/login", request.url));
+      }
+
+      if (adminPath.startsWith("/auth/")) {
+        return NextResponse.redirect(new URL(adminPath, request.url));
+      }
     }
   } else {
     // Dominio normal: bloquear rutas de admin transparentes y las prefijadas sys-
@@ -86,7 +115,7 @@ export async function updateSession(request: NextRequest) {
   // Si ya tiene sesión e intenta ver sign-up/login
   if (user && authPagesForGuestsOnly.has(pathname)) {
     const url = request.nextUrl.clone();
-    url.pathname = isAdminDomain ? "/dashboard" : "/dashboard";
+    url.pathname = isAdminContext ? "/sys-dashboard" : "/dashboard";
     return NextResponse.redirect(url);
   }
 
@@ -98,7 +127,11 @@ export async function updateSession(request: NextRequest) {
     PUBLIC_ROUTES.some(r => pathname === r || pathname.startsWith(r + "/"));
 
   // Rutas sys- y dashboard de estudiantes requieren auth
-  const isProtectedTab = ADMIN_TABS.some(t => pathname.startsWith("/" + t)) || pathname.startsWith("/sys-") || pathname.startsWith("/dashboard");
+  const isProtectedTab =
+    isLocalAdminPath ||
+    ADMIN_TABS.some((tab) => pathname.startsWith("/" + tab)) ||
+    pathname.startsWith("/sys-") ||
+    pathname.startsWith("/dashboard");
 
   if (!user && !isPublic && isProtectedTab) {
     const url = request.nextUrl.clone();

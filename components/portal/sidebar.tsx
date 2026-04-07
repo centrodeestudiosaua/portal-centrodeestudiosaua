@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Shield } from "lucide-react";
 
 import { sidebarItems, settingsItem } from "@/components/portal/mock-data";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,7 @@ export function PortalSidebar({
     fullName: string;
     email?: string | null;
     membershipLabel?: string | null;
+    role?: string | null;
   };
 }) {
   const pathname = usePathname();
@@ -72,6 +74,18 @@ export function PortalSidebar({
       </nav>
 
       <div className="mt-auto border-t border-white/10 px-6 py-6">
+        {user?.role === "admin" && (
+          <div className="mb-6 flex justify-center">
+            <Link
+              href="/sys-dashboard"
+              className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#9B1D20]/20 border border-[#9B1D20]/30 py-2.5 text-xs font-bold uppercase tracking-widest text-[#e87b7e] transition-all hover:bg-[#9B1D20]/30 hover:text-white hover:-translate-y-0.5"
+            >
+              <Shield className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
+              <span>Entrar al Admin</span>
+            </Link>
+          </div>
+        )}
+
         <Link
           href={settingsItem.href}
           className="flex items-center gap-4 text-sm font-medium text-[hsl(var(--portal-sidebar-muted))] transition-colors hover:text-white"

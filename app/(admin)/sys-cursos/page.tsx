@@ -11,7 +11,7 @@ async function getCursos() {
 
   const { data } = await supabase
     .from("courses")
-    .select("id, slug, title, access_type, price_mxn, installment_amount_mxn, installments_count, duration_label, created_at")
+    .select("id, slug, title, thumbnail_url, is_published, access_type, price_mxn, installment_amount_mxn, installments_count, duration_label, created_at")
     .order("created_at", { ascending: false });
 
   return data ?? [];

@@ -39,9 +39,15 @@ export default function Home() {
           <div className="mt-10 flex flex-col gap-4 sm:flex-row">
             <Button
               asChild
+              className="rounded-none bg-[#9B1D20] px-8 py-6 text-xs font-bold uppercase tracking-[0.18em] text-white hover:bg-[#7a171a]"
+            >
+              <Link href="/sys-dashboard">Panel Administrador</Link>
+            </Button>
+            <Button
+              asChild
               className="rounded-none bg-accent px-8 py-6 text-xs font-bold uppercase tracking-[0.18em] text-primary hover:bg-[#f4c62c]"
             >
-              <Link href="/dashboard">Entrar Al Dashboard</Link>
+              <Link href="/dashboard">Portal Estudiantes</Link>
             </Button>
             <Button
               asChild

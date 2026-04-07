@@ -28,6 +28,14 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "cixfitucqskplvfbavzq.supabase.co",
       },
+      {
+        protocol: "https",
+        hostname: "portal-centrodeestudiosaua.vercel.app",
+      },
+      {
+        protocol: "https",
+        hostname: "alumnos.centrodeestudiosaua.com",
+      },
     ],
   },
 };
