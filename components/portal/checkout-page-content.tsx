@@ -97,6 +97,9 @@ export function CheckoutPageContent({ course }: { course: CourseDetail }) {
                 src={course.thumbnailUrl || "/diplomadoamparo.png"}
                 alt={course.title}
                 className="h-full w-full object-cover"
+                onError={(event) => {
+                  event.currentTarget.src = "/diplomadoamparo.png";
+                }}
               />
             </div>
 

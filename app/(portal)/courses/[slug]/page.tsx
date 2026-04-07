@@ -1,9 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { CheckCircle2 } from "lucide-react";
 
+import { CourseCoverImage } from "@/components/portal/course-cover-image";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { TopicProgressButton } from "@/components/portal/topic-progress-button";
@@ -155,11 +155,9 @@ export default async function CourseDetailPage({
           </div>
 
           <div className="relative min-h-[320px]">
-            <Image
+            <CourseCoverImage
               src={course.thumbnailUrl || "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=1200&q=80"}
               alt={course.title}
-              fill
-              loading="eager"
               priority
               sizes="(max-width: 1023px) 100vw, 40vw"
               className="object-cover"

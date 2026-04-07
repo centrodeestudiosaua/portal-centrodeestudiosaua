@@ -1,8 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import { BookOpen, CreditCard } from "lucide-react";
 import { connection } from "next/server";
 
+import { CourseCoverImage } from "@/components/portal/course-cover-image";
 import { Button } from "@/components/ui/button";
 import { getCoursesPageData } from "@/lib/portal/data";
 
@@ -50,10 +50,9 @@ export default async function CoursesPage() {
               className="overflow-hidden rounded-2xl border border-border bg-white shadow-[0_18px_50px_rgba(21,18,40,0.06)]"
             >
               <div className="relative h-44 w-full">
-                <Image
+                <CourseCoverImage
                   src={course.thumbnailUrl}
                   alt={course.title}
-                  fill
                   sizes="(max-width: 767px) 100vw, (max-width: 1279px) 50vw, 33vw"
                   className="object-cover"
                 />
