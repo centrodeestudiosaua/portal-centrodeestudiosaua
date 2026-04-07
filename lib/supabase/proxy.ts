@@ -4,6 +4,18 @@ import { hasEnvVars } from "../utils";
 
 const ADMIN_HOST = "admin.centrodeestudiosaua.com";
 
+// Rutas permitidas desde el dominio admin (todo lo demás → /admin)
+const ADMIN_DOMAIN_WHITELIST = ["/admin", "/login", "/auth", "/api", "/_next"];
+
+// Rutas públicas del dominio de alumnos (no requieren auth)
+const PUBLIC_ROUTES = [
+  "/inscribirse",
+  "/recuperar-acceso",
+  "/admision",
+  "/api/checkout",
+  "/api/webhooks",
+];
+
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hostname = request.headers.get("host") ?? "";
@@ -11,17 +23,19 @@ export async function updateSession(request: NextRequest) {
 
   // ── Routing por dominio ─────────────────────────────────────────────
   if (isAdminDomain) {
-    // Raíz del dominio admin → /admin
+    // Raíz → panel admin
     if (pathname === "/") {
       return NextResponse.redirect(new URL("/admin", request.url));
     }
-    // Bloquear rutas de alumnos desde dominio admin
-    const studentRoutes = ["/inscribirse", "/courses", "/payments", "/certificates", "/calendar", "/messages", "/checkout"];
-    if (studentRoutes.some((r) => pathname === r || pathname.startsWith(r + "/"))) {
+    // Whitelist: solo permitir /admin/*, /login, /auth/*, /api/*, /_next/*
+    const isAllowed = ADMIN_DOMAIN_WHITELIST.some(
+      (r) => pathname === r || pathname.startsWith(r + "/"),
+    );
+    if (!isAllowed) {
       return NextResponse.redirect(new URL("/admin", request.url));
     }
   } else {
-    // Dominio alumnos: bloquear /admin/*
+    // Dominio alumnos: bloquear acceso al panel admin
     if (pathname === "/admin" || pathname.startsWith("/admin/")) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
@@ -73,23 +87,21 @@ export async function updateSession(request: NextRequest) {
 
   if (user && authPagesForGuestsOnly.has(pathname)) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    // En dominio admin, redirigir al panel admin
+    url.pathname = isAdminDomain ? "/admin" : "/dashboard";
     return NextResponse.redirect(url);
   }
 
-  if (
-    pathname !== "/" &&
-    !user &&
-    !pathname.startsWith("/login") &&
-    !pathname.startsWith("/auth") &&
-    !pathname.startsWith("/inscribirse") &&
-    !pathname.startsWith("/recuperar-acceso") &&
-    !pathname.startsWith("/admision") &&
-    !pathname.startsWith("/api/checkout") &&
-    !pathname.startsWith("/api/webhooks")
-  ) {
+  // Rutas protegidas: requieren auth
+  const isPublic =
+    pathname === "/" ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/auth") ||
+    PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"));
+
+  if (!user && !isPublic) {
     const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
+    url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
