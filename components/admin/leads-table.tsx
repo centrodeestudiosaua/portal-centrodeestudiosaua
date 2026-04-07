@@ -9,6 +9,9 @@ type Lead = {
   full_name: string;
   email: string;
   phone: string | null;
+  company: string | null;
+  education_level: string | null;
+  city: string | null;
   course_slug: string | null;
   source: string;
   status: string;
@@ -25,12 +28,14 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 function exportCSV(leads: Lead[]) {
-  const headers = ["Nombre", "Email", "Teléfono", "Curso", "Fuente", "Estado", "Fecha"];
+  const headers = ["Nombre", "Email", "Teléfono", "Empresa", "Grado de Estudios", "Ciudad", "Fuente", "Estado", "Fecha"];
   const rows = leads.map((l) => [
     l.full_name,
     l.email,
     l.phone ?? "",
-    l.course_slug ?? "",
+    l.company ?? "",
+    l.education_level ?? "",
+    l.city ?? "",
     l.source,
     STATUS_LABELS[l.status]?.label ?? l.status,
     new Date(l.created_at).toLocaleDateString("es-MX"),
@@ -128,10 +133,10 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
               <tr className="border-b border-slate-100 bg-slate-50">
                 <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">Nombre</th>
                 <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">Contacto</th>
+                <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">Perfil</th>
                 <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">Fuente</th>
                 <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">Estado</th>
                 <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">Fecha</th>
-                <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">Notas</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -156,6 +161,12 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                         <p className="text-slate-700">{lead.email}</p>
                         {lead.phone && <p className="text-slate-400 text-xs">{lead.phone}</p>}
                       </td>
+                      <td className="px-5 py-4">
+                        {lead.company && <p className="text-xs text-slate-700 font-medium">{lead.company}</p>}
+                        {lead.education_level && <p className="text-[10px] text-slate-400">{lead.education_level}</p>}
+                        {lead.city && <p className="text-[10px] text-slate-400">{lead.city}</p>}
+                        {!lead.company && !lead.education_level && !lead.city && <span className="text-xs text-slate-400">—</span>}
+                      </td>
                       <td className="px-5 py-4 text-slate-500">{lead.source}</td>
                       <td className="px-5 py-4">
                         <select
@@ -171,9 +182,6 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                       </td>
                       <td className="px-5 py-4 text-slate-500 text-xs whitespace-nowrap">
                         {new Date(lead.created_at).toLocaleDateString("es-MX")}
-                      </td>
-                      <td className="px-5 py-4 text-slate-500 max-w-[200px] truncate text-xs">
-                        {lead.notes ?? "—"}
                       </td>
                     </tr>
                   );
