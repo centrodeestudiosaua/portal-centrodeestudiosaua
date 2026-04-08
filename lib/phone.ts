@@ -7,6 +7,14 @@ export type PhoneCountryOption = {
   placeholder: string;
 };
 
+export type StoredPhoneParts = {
+  country: PhoneCountryOption;
+  countryCode: string;
+  localPhone: string;
+  formattedLocalPhone: string;
+  e164Phone: string;
+};
+
 export const PHONE_COUNTRIES: PhoneCountryOption[] = [
   { code: "MX", dialCode: "+52", flag: "🇲🇽", label: "Mexico", localLength: 10, placeholder: "(000) 000-0000" },
   { code: "US", dialCode: "+1", flag: "🇺🇸", label: "Estados Unidos", localLength: 10, placeholder: "(000) 000-0000" },
@@ -32,6 +40,90 @@ export const PHONE_COUNTRIES: PhoneCountryOption[] = [
 
 export function getPhoneCountry(code: string) {
   return PHONE_COUNTRIES.find((country) => country.code === code) ?? PHONE_COUNTRIES[0];
+}
+
+function getDialDigits(countryCode: string) {
+  return getPhoneCountry(countryCode).dialCode.replace(/\D/g, "");
+}
+
+function buildStoredPhoneParts(countryCode: string, localPhone: string): StoredPhoneParts {
+  const country = getPhoneCountry(countryCode);
+  const normalizedLocalPhone = normalizeLocalPhone(localPhone, countryCode);
+
+  return {
+    country,
+    countryCode,
+    localPhone: normalizedLocalPhone,
+    formattedLocalPhone: formatLocalPhone(normalizedLocalPhone, countryCode),
+    e164Phone: normalizedLocalPhone ? `${country.dialCode}${normalizedLocalPhone}` : "",
+  };
+}
+
+export function findPhoneCountryByDialCode(value: string, fallbackCountryCode = "MX") {
+  const digits = value.replace(/\D/g, "");
+  const countriesByDialLength = [...PHONE_COUNTRIES].sort(
+    (left, right) =>
+      right.dialCode.replace(/\D/g, "").length - left.dialCode.replace(/\D/g, "").length,
+  );
+
+  return (
+    countriesByDialLength.find((country) =>
+      digits.startsWith(country.dialCode.replace(/\D/g, "")),
+    ) ?? getPhoneCountry(fallbackCountryCode)
+  );
+}
+
+export function splitStoredPhone(value: string | null | undefined, fallbackCountryCode = "MX") {
+  const raw = (value || "").trim();
+  const digits = raw.replace(/\D/g, "");
+
+  if (!digits) {
+    return buildStoredPhoneParts(fallbackCountryCode, "");
+  }
+
+  const fallbackCountry = getPhoneCountry(fallbackCountryCode);
+  const looksInternational = raw.startsWith("+") || digits.length > fallbackCountry.localLength;
+
+  if (!looksInternational) {
+    return buildStoredPhoneParts(fallbackCountryCode, digits);
+  }
+
+  const country = findPhoneCountryByDialCode(raw, fallbackCountryCode);
+  const dialDigits = getDialDigits(country.code);
+  let localDigits = digits.startsWith(dialDigits) ? digits.slice(dialDigits.length) : digits;
+
+  while (
+    localDigits.length > country.localLength &&
+    localDigits.startsWith(dialDigits)
+  ) {
+    localDigits = localDigits.slice(dialDigits.length);
+  }
+
+  if (localDigits.length > country.localLength) {
+    localDigits = localDigits.slice(-country.localLength);
+  }
+
+  return buildStoredPhoneParts(country.code, localDigits);
+}
+
+export function normalizeStoredPhone(value: string | null | undefined, fallbackCountryCode = "MX") {
+  const { e164Phone } = splitStoredPhone(value, fallbackCountryCode);
+  return e164Phone || null;
+}
+
+export function formatStoredPhone(
+  value: string | null | undefined,
+  fallbackCountryCode = "MX",
+  options?: { includeFlag?: boolean },
+) {
+  const { country, formattedLocalPhone } = splitStoredPhone(value, fallbackCountryCode);
+
+  if (!formattedLocalPhone) {
+    return "";
+  }
+
+  const prefix = options?.includeFlag ? `${country.flag} ${country.dialCode}` : country.dialCode;
+  return `${prefix} ${formattedLocalPhone}`;
 }
 
 export function normalizeLocalPhone(value: string, countryCode: string) {

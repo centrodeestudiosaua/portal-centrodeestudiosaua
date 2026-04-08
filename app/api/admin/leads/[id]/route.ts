@@ -1,22 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 
+import { normalizeStoredPhone } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
 
 function normalizePhone(value: string | null | undefined) {
-  const raw = (value || "").trim();
-  if (!raw) return null;
-
-  if (raw.startsWith("+")) {
-    const digits = raw.slice(1).replace(/\D/g, "");
-    if (digits.length === 12 && digits.startsWith("52")) {
-      return `+${digits}`;
-    }
-    return null;
-  }
-
-  const digits = raw.replace(/\D/g, "");
-  return digits.length === 10 ? digits : null;
+  return normalizeStoredPhone(value, "MX");
 }
 
 export async function PATCH(
