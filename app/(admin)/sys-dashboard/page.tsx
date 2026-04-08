@@ -142,7 +142,7 @@ export default async function AdminDashboardPage() {
         {[
           { label: "Ver Leads nuevos", href: getAdminPublicPath("leads"), color: "bg-blue-50 border-blue-200 text-blue-800" },
           { label: "Ver Alumnos", href: getAdminPublicPath("alumnos"), color: "bg-emerald-50 border-emerald-200 text-emerald-800" },
-          { label: "Gestionar Sesiones", href: getAdminPublicPath("sesiones"), color: "bg-amber-50 border-amber-200 text-amber-800" },
+          { label: "Ver Pagos", href: getAdminPublicPath("pagos"), color: "bg-amber-50 border-amber-200 text-amber-800" },
         ].map((link) => (
           <a
             key={link.href}

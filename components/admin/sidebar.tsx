@@ -8,7 +8,6 @@ import {
   Users,
   GraduationCap,
   CreditCard,
-  Video,
   BookOpen,
   BarChart3,
   Settings,
@@ -23,7 +22,6 @@ const adminNavItems = [
   { label: "Leads", key: "leads", href: "/sys-leads", icon: Users },
   { label: "Alumnos", key: "alumnos", href: "/sys-alumnos", icon: GraduationCap },
   { label: "Pagos", key: "pagos", href: "/sys-pagos", icon: CreditCard },
-  { label: "Sesiones", key: "sesiones", href: "/sys-sesiones", icon: Video },
   { label: "Cursos", key: "cursos", href: "/sys-cursos", icon: BookOpen },
   { label: "Reportes", key: "reportes", href: "/sys-reportes", icon: BarChart3 },
 ] as const;
