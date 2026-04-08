@@ -42,7 +42,8 @@ export async function updateSession(request: NextRequest) {
   // 1. REWRITE/REDIRECT LOGIC POR DOMINIO
   if (isAdminContext) {
     if (adminPath === "/") {
-      return NextResponse.redirect(new URL("/sys-dashboard", request.url));
+      const target = isAdminDomain ? "/dashboard" : "/admin/dashboard";
+      return NextResponse.redirect(new URL(target, request.url));
     }
 
     const baseSegment = adminPath.split("/")[1];
@@ -57,7 +58,8 @@ export async function updateSession(request: NextRequest) {
     );
 
     if (!isAllowedPublic && !isAllowedSys) {
-      return NextResponse.redirect(new URL("/sys-dashboard", request.url));
+      const target = isAdminDomain ? "/dashboard" : "/admin/dashboard";
+      return NextResponse.redirect(new URL(target, request.url));
     }
 
     if (!isAdminDomain && adminPath !== pathname) {

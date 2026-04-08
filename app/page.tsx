@@ -7,8 +7,8 @@ import { Suspense } from "react";
 export default function Home() {
   const adminHref =
     process.env.NODE_ENV === "development"
-      ? "/sys-dashboard"
-      : buildAdminUrl("/sys-dashboard");
+      ? "/admin/dashboard"
+      : buildAdminUrl("/dashboard");
 
   return (
     <main className="min-h-screen bg-primary text-white">

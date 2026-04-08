@@ -15,19 +15,20 @@ import {
   Shield,
 } from "lucide-react";
 
+import { getAdminBrowserPath, getAdminLocalPath, getAdminPublicPath } from "@/lib/admin-routes";
 import { cn } from "@/lib/utils";
 
 const adminNavItems = [
-  { label: "Dashboard",  href: "/sys-dashboard",  icon: LayoutDashboard,  exact: true },
-  { label: "Leads",      href: "/sys-leads",      icon: Users },
-  { label: "Alumnos",   href: "/sys-alumnos",   icon: GraduationCap },
-  { label: "Pagos",     href: "/sys-pagos",     icon: CreditCard },
-  { label: "Sesiones",  href: "/sys-sesiones",  icon: Video },
-  { label: "Cursos",    href: "/sys-cursos",    icon: BookOpen },
-  { label: "Reportes",  href: "/sys-reportes",  icon: BarChart3 },
-];
+  { label: "Dashboard", key: "dashboard", href: "/sys-dashboard", icon: LayoutDashboard, exact: true },
+  { label: "Leads", key: "leads", href: "/sys-leads", icon: Users },
+  { label: "Alumnos", key: "alumnos", href: "/sys-alumnos", icon: GraduationCap },
+  { label: "Pagos", key: "pagos", href: "/sys-pagos", icon: CreditCard },
+  { label: "Sesiones", key: "sesiones", href: "/sys-sesiones", icon: Video },
+  { label: "Cursos", key: "cursos", href: "/sys-cursos", icon: BookOpen },
+  { label: "Reportes", key: "reportes", href: "/sys-reportes", icon: BarChart3 },
+] as const;
 
-const adminSettingsItem = { label: "Ajustes", href: "/sys-ajustes", icon: Settings };
+const adminSettingsItem = { label: "Ajustes", key: "ajustes", href: "/sys-ajustes", icon: Settings } as const;
 
 export function AdminSidebar({
   user,
@@ -43,6 +44,7 @@ export function AdminSidebar({
       .slice(0, 2)
       .map((c) => c[0]?.toUpperCase())
       .join("") || "A";
+  const settingsHref = getAdminBrowserPath(adminSettingsItem.key);
 
   return (
     <aside className="hidden w-64 bg-[hsl(var(--portal-sidebar))] text-white lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex lg:flex-col">
@@ -73,14 +75,23 @@ export function AdminSidebar({
         <ul className="space-y-1">
           {adminNavItems.map((item) => {
             const Icon = item.icon;
-            const isActive = item.exact
-              ? pathname === item.href
-              : pathname === item.href || pathname.startsWith(item.href + "/");
+            const publicPath = getAdminPublicPath(item.key);
+            const localPath = getAdminLocalPath(item.key);
+            const isExact = "exact" in item && item.exact;
+            const isActive = isExact
+              ? pathname === item.href || pathname === publicPath || pathname === localPath
+              : pathname === item.href ||
+                pathname.startsWith(item.href + "/") ||
+                pathname === publicPath ||
+                pathname.startsWith(publicPath + "/") ||
+                pathname === localPath ||
+                pathname.startsWith(localPath + "/");
+            const publicHref = getAdminBrowserPath(item.key);
 
             return (
               <li key={item.href}>
                 <Link
-                  href={item.href}
+                  href={publicHref}
                   className={cn(
                     "portal-sidebar-link",
                     isActive && "portal-sidebar-link-active",
@@ -98,7 +109,7 @@ export function AdminSidebar({
       {/* Footer */}
       <div className="mt-auto border-t border-white/10 px-6 py-6">
         <Link
-          href={adminSettingsItem.href}
+          href={settingsHref}
           className="flex items-center gap-4 text-sm font-medium text-[hsl(var(--portal-sidebar-muted))] transition-colors hover:text-white"
         >
           <adminSettingsItem.icon className="h-4 w-4" />

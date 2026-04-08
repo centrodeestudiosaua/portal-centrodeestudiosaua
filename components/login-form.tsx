@@ -42,7 +42,7 @@ export function LoginForm({
            .single();
            
          if (profile?.role === "admin") {
-           window.location.assign(getAdminUrlForBrowser("/sys-dashboard"));
+           window.location.assign(getAdminUrlForBrowser("/dashboard"));
            return;
          } else {
            router.push("/dashboard");

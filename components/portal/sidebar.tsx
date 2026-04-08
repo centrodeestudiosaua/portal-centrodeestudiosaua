@@ -26,7 +26,7 @@ export function PortalSidebar({
     .slice(0, 2)
     .map((chunk) => chunk[0]?.toUpperCase())
     .join("") || "A";
-  const adminHref = getAdminUrlForBrowser("/sys-dashboard");
+  const adminHref = getAdminUrlForBrowser("/dashboard");
 
   return (
     <aside className="hidden w-64 bg-[hsl(var(--portal-sidebar))] text-white lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex lg:flex-col">

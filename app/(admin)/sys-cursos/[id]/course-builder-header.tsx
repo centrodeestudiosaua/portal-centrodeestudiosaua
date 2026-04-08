@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Cloud, ExternalLink, Loader2, Play } from "lucide-react";
 import Link from "next/link";
+import { getAdminBrowserCustomPath, getAdminBrowserPath } from "@/lib/admin-routes";
 import { syncCourseWithStripe, togglePublishCourse } from "./course-actions";
 
 export default function CourseBuilderHeader({ course }: { course: any }) {
@@ -11,6 +12,8 @@ export default function CourseBuilderHeader({ course }: { course: any }) {
   const [isPendingSync, startTransitionSync] = useTransition();
   const [isPendingPublish, startTransitionPublish] = useTransition();
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
+  const coursesHref = getAdminBrowserPath("cursos");
+  const previewHref = getAdminBrowserCustomPath(`/sys-cursos/${course.id}/preview`);
 
   const handleGlobalSync = () => {
     startTransitionSync(async () => {
@@ -46,7 +49,7 @@ export default function CourseBuilderHeader({ course }: { course: any }) {
       <div className="flex items-start justify-between gap-6">
         <div className="flex items-start gap-4">
           <Link
-            href="/sys-cursos"
+            href={coursesHref}
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-500 transition-colors hover:bg-[#f1ebe2] hover:text-slate-900"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -85,7 +88,7 @@ export default function CourseBuilderHeader({ course }: { course: any }) {
         <div className="flex items-center justify-end gap-3">
           {course.id ? (
             <Link
-              href={`/sys-cursos/${course.id}/preview`}
+              href={previewHref}
               className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#e8decf] bg-white px-4 text-xs font-bold uppercase tracking-[0.18em] text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
             >
               <ExternalLink className="h-3.5 w-3.5" />

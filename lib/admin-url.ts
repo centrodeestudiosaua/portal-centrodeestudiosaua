@@ -10,7 +10,7 @@ function isLocalOrigin(origin: string) {
   return origin.startsWith("http://localhost") || origin.startsWith("http://127.0.0.1");
 }
 
-export function buildAdminUrl(path = "/sys-dashboard", currentOrigin?: string) {
+export function buildAdminUrl(path = "/dashboard", currentOrigin?: string) {
   const normalizedPath = normalizePath(path);
 
   if (normalizedPath.startsWith("http://") || normalizedPath.startsWith("https://")) {
@@ -25,7 +25,7 @@ export function buildAdminUrl(path = "/sys-dashboard", currentOrigin?: string) {
   return new URL(normalizedPath, base).toString();
 }
 
-export function getAdminUrlForBrowser(path = "/sys-dashboard") {
+export function getAdminUrlForBrowser(path = "/dashboard") {
   if (typeof window === "undefined") {
     return buildAdminUrl(path);
   }

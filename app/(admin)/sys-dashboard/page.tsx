@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { Users, GraduationCap, CreditCard, TrendingUp } from "lucide-react";
 
 import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { getAdminPublicPath } from "@/lib/admin-routes";
 
 async function getAdminStats() {
   const supabase = createAdminClient(
@@ -139,9 +140,9 @@ export default async function AdminDashboardPage() {
       {/* Quick links */}
       <section className="grid gap-4 md:grid-cols-3">
         {[
-          { label: "Ver Leads nuevos", href: "/admin/leads", color: "bg-blue-50 border-blue-200 text-blue-800" },
-          { label: "Ver Alumnos", href: "/admin/alumnos", color: "bg-emerald-50 border-emerald-200 text-emerald-800" },
-          { label: "Gestionar Sesiones", href: "/admin/sesiones", color: "bg-amber-50 border-amber-200 text-amber-800" },
+          { label: "Ver Leads nuevos", href: getAdminPublicPath("leads"), color: "bg-blue-50 border-blue-200 text-blue-800" },
+          { label: "Ver Alumnos", href: getAdminPublicPath("alumnos"), color: "bg-emerald-50 border-emerald-200 text-emerald-800" },
+          { label: "Gestionar Sesiones", href: getAdminPublicPath("sesiones"), color: "bg-amber-50 border-amber-200 text-amber-800" },
         ].map((link) => (
           <a
             key={link.href}
