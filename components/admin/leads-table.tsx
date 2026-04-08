@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { Download, PencilLine, Search, Trash2, Upload, X } from "lucide-react";
+import { Download, MoreHorizontal, Search, Trash2, Upload, X } from "lucide-react";
 import Papa from "papaparse";
 
 type Lead = {
@@ -187,6 +187,12 @@ function getPhoneMeta(phone: string | null) {
     code: "+52",
     formatted: formatPhoneNumber(phone),
   };
+}
+
+function getPhoneSummary(phone: string | null) {
+  const meta = getPhoneMeta(phone);
+  if (!meta.formatted) return "Sin teléfono";
+  return `${meta.flag} ${meta.formatted}`;
 }
 
 function splitAlternatePhone(notes: string | null) {
@@ -651,7 +657,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                         {lead.phone ? (
                           <a
                             href={`tel:${lead.phone}`}
-                            className="text-sm font-medium text-slate-700 underline decoration-slate-200 underline-offset-4 transition hover:text-[#9B1D20]"
+                            className="whitespace-nowrap text-sm font-medium text-slate-700 underline decoration-slate-200 underline-offset-4 transition hover:text-[#9B1D20]"
                           >
                             {getPhoneMeta(lead.phone).formatted}
                           </a>
@@ -700,10 +706,10 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                         <button
                           type="button"
                           onClick={() => openEditor(lead)}
-                          className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50"
+                          aria-label={`Editar ${lead.full_name}`}
                         >
-                          <PencilLine className="h-3.5 w-3.5" />
-                          Editar
+                          <MoreHorizontal className="h-4 w-4" />
                         </button>
                       </td>
                     </tr>
@@ -743,7 +749,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
     </div>
     {editorOpen && editingLead ? (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-8">
-        <div className="relative w-full max-w-4xl rounded-[30px] border border-[#e8decf] bg-white shadow-2xl">
+        <div className="relative w-full max-w-6xl rounded-[30px] border border-[#e8decf] bg-white shadow-2xl">
           <button
             type="button"
             onClick={closeEditor}
@@ -759,9 +765,9 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
             </p>
           </div>
 
-          <div className="grid gap-6 px-8 py-6 lg:grid-cols-[1.15fr_0.85fr]">
-            <div className="space-y-5">
-              <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-8 px-8 py-6 xl:grid-cols-[1.35fr_0.85fr]">
+            <div className="space-y-5 min-w-0">
+              <div className="grid gap-4 lg:grid-cols-2">
                 <Field label="Nombre completo">
                   <input
                     value={editingLead.full_name}
@@ -779,7 +785,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                 </Field>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 xl:grid-cols-2">
                 <Field label="Teléfono principal">
                   <PhoneField
                     countryCode={editingLead.phoneCountryCode}
@@ -798,7 +804,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                 </Field>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-4 lg:grid-cols-3">
                 <Field label="Grado de estudios">
                   <input
                     value={editingLead.education_level}
@@ -833,7 +839,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
               </Field>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-5 min-w-0">
               <div className="rounded-[24px] border border-[#e8decf] bg-[#fcfaf6] p-5">
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Etapa comercial</p>
                 <select
@@ -857,7 +863,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                   <div className="rounded-2xl border border-[#efe4d3] bg-white px-4 py-3">
                     <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Teléfono</span>
                     <span className="mt-1 block font-medium text-slate-900">
-                      {`${COUNTRY_OPTIONS.find((option) => option.code === editingLead.phoneCountryCode)?.flag || "🇲🇽"} ${editingLead.phoneCountryCode} ${formatPhoneNumber(`${editingLead.phoneCountryCode}${editingLead.phoneLocalNumber}`) || editingLead.phoneLocalNumber || "Sin teléfono"}`}
+                      {getPhoneSummary(normalizePhoneForSave(editingLead.phoneCountryCode, editingLead.phoneLocalNumber))}
                     </span>
                   </div>
                   <div className="rounded-2xl border border-[#efe4d3] bg-white px-4 py-3">
@@ -888,7 +894,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                 </div>
               ) : null}
 
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-3 xl:justify-end">
                 <button
                   type="button"
                   onClick={handleDeleteLead}
@@ -944,11 +950,11 @@ function PhoneField({
   onLocalNumberChange: (value: string) => void;
 }) {
   return (
-    <div className="flex gap-3">
+    <div className="grid grid-cols-[132px_minmax(0,1fr)] gap-3">
       <select
         value={countryCode}
         onChange={(e) => onCountryCodeChange(e.target.value)}
-        className="h-12 w-[130px] rounded-[14px] border border-[#e8decf] bg-[#fcfaf6] px-3 text-sm font-medium text-slate-900 outline-none transition focus:border-[#caa971]"
+        className="h-12 min-w-0 rounded-[14px] border border-[#e8decf] bg-[#fcfaf6] px-3 text-sm font-medium text-slate-900 outline-none transition focus:border-[#caa971]"
       >
         {COUNTRY_OPTIONS.map((option) => (
           <option key={option.code} value={option.code}>
@@ -962,7 +968,7 @@ function PhoneField({
         inputMode="tel"
         autoComplete="tel-national"
         maxLength={10}
-        className="h-12 flex-1 rounded-[14px] border border-[#e8decf] bg-[#fcfaf6] px-4 text-sm text-slate-900 outline-none transition focus:border-[#caa971]"
+        className="h-12 min-w-0 rounded-[14px] border border-[#e8decf] bg-[#fcfaf6] px-4 text-sm text-slate-900 outline-none transition focus:border-[#caa971]"
         placeholder="9987776523"
       />
     </div>
