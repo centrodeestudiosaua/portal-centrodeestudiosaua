@@ -191,8 +191,9 @@ function getPhoneMeta(phone: string | null) {
 
 function getPhoneSummary(phone: string | null) {
   const meta = getPhoneMeta(phone);
-  if (!meta.formatted) return "Sin teléfono";
-  return `${meta.flag} ${meta.formatted}`;
+  const parts = splitPhoneParts(phone);
+  if (!parts.localNumber) return "Sin teléfono";
+  return `${meta.flag} ${parts.countryCode} ${formatPhoneNumber(parts.localNumber) || parts.localNumber}`;
 }
 
 function splitAlternatePhone(notes: string | null) {
@@ -589,7 +590,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                 <th className="px-4 py-3 font-bold text-slate-800">Fuente</th>
                 <th className="px-4 py-3 font-bold text-slate-800">Fecha</th>
                 <th className="px-4 py-3 font-bold text-slate-800">Estatus</th>
-                <th className="px-4 py-3 font-bold text-slate-800 text-right">Acción</th>
+                <th className="px-4 py-3 text-right"></th>
               </tr>
               {/* Filter inputs sub-row */}
               <tr className="border-b border-slate-100 bg-slate-50/50">
@@ -642,13 +643,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                             {initials}
                           </div>
                           <div>
-                            <button
-                              type="button"
-                              onClick={() => openEditor(lead)}
-                              className="text-left font-bold text-slate-900 transition hover:text-[#9B1D20]"
-                            >
-                              {lead.full_name}
-                            </button>
+                            <p className="font-bold text-slate-900">{lead.full_name}</p>
                             <p className="text-xs text-slate-500 hover:text-blue-600 cursor-pointer">{lead.email}</p>
                           </div>
                         </div>
@@ -706,7 +701,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                         <button
                           type="button"
                           onClick={() => openEditor(lead)}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
                           aria-label={`Editar ${lead.full_name}`}
                         >
                           <MoreHorizontal className="h-4 w-4" />
