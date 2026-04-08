@@ -603,7 +603,11 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                   const initials = getInitials(lead.full_name);
                   
                   return (
-                    <tr key={lead.id} className="hover:bg-slate-50 transition-colors bg-white group">
+                    <tr
+                      key={lead.id}
+                      className="cursor-pointer bg-white transition-colors hover:bg-slate-50 group"
+                      onClick={() => openEditor(lead)}
+                    >
                       <td className="px-4 py-4 text-center">
                         <input
                           type="checkbox"
@@ -628,6 +632,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                         {lead.phone ? (
                           <a
                             href={`tel:${normalizeLeadPhone(lead.phone)}`}
+                            onClick={(e) => e.stopPropagation()}
                             className="whitespace-nowrap text-sm font-medium text-slate-700 underline decoration-slate-200 underline-offset-4 transition hover:text-[#9B1D20]"
                           >
                             {formatPhoneNumber(lead.phone)}
