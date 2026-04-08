@@ -4,6 +4,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Download, MoreHorizontal, Search, Trash2, Upload, X } from "lucide-react";
 import Papa from "papaparse";
+import { parsePhoneNumber } from "react-phone-number-input";
+import type { Value as PhoneValue } from "react-phone-number-input";
+
+import { PhoneInput } from "@/components/ui/phone-input";
 
 type Lead = {
   id: string;
@@ -27,13 +31,6 @@ const STATUS_LABELS: Record<string, { label: string; color: string; badge: strin
   cerrado_ganado:  { label: "Ganado ✓",       color: "bg-green-100 text-green-700",     badge: "bg-green-50 text-green-700 border-green-200" },
   cerrado_perdido: { label: "Perdido",        color: "bg-red-100 text-red-700",         badge: "bg-red-50 text-red-700 border-red-200" },
 };
-
-const COUNTRY_OPTIONS = [
-  { code: "+52", flag: "🇲🇽", label: "México", nationalLength: 10 },
-  { code: "+1", flag: "🇺🇸", label: "EE. UU.", nationalLength: 10 },
-  { code: "+54", flag: "🇦🇷", label: "Argentina", nationalLength: 10 },
-  { code: "+57", flag: "🇨🇴", label: "Colombia", nationalLength: 10 },
-];
 
 function exportCSV(leads: Lead[]) {
   const headers = ["Nombre", "Email", "Teléfono", "Empresa", "Grado de Estudios", "Ciudad", "Fuente", "Estado", "Fecha"];
@@ -115,102 +112,44 @@ function getInitials(name: string) {
 
 function formatPhoneNumber(phone: string | null) {
   if (!phone) return null;
-
-  const cleaned = phone.replace(/[^\d+]/g, "");
-  if (cleaned.startsWith("+52") && cleaned.length === 13) {
-    const national = cleaned.slice(3);
-    return `+52 ${national.slice(0, 3)} ${national.slice(3, 6)} ${national.slice(6)}`;
+  const normalized = normalizeLeadPhone(phone);
+  const parsed = normalized ? parsePhoneNumber(normalized) : null;
+  if (parsed) {
+    return parsed.formatInternational();
   }
-
-  const digits = cleaned.replace(/\D/g, "");
-  if (digits.length === 10) {
-    return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
-  }
-
-  if (digits.length === 12 && digits.startsWith("52")) {
-    const national = digits.slice(2);
-    return `+52 ${national.slice(0, 3)} ${national.slice(3, 6)} ${national.slice(6)}`;
-  }
-
   return phone;
 }
 
-function sanitizePhoneInput(value: string) {
-  return value.replace(/\D/g, "").slice(0, 10);
-}
-
-function normalizePhoneForSave(countryCode: string, value: string) {
-  const localDigits = sanitizePhoneInput(value);
-  const country = COUNTRY_OPTIONS.find((option) => option.code === countryCode) ?? COUNTRY_OPTIONS[0];
-  if (localDigits.length !== country.nationalLength) return null;
-  return `${country.code}${localDigits}`;
-}
-
-function splitPhoneParts(phone: string | null) {
-  if (!phone) {
-    return { countryCode: "+52", localNumber: "" };
-  }
-
-  const normalized = phone.replace(/[^\d+]/g, "");
-  const match = COUNTRY_OPTIONS.find((option) => normalized.startsWith(option.code));
-  if (match) {
-    const rawLocalNumber = normalized.slice(match.code.length).replace(/\D/g, "");
-    const fixedLocalNumber =
-      match.code === "+52" && rawLocalNumber.length > match.nationalLength && rawLocalNumber.startsWith("52")
-        ? rawLocalNumber.slice(2, 2 + match.nationalLength)
-        : rawLocalNumber.slice(0, match.nationalLength);
-
-    return {
-      countryCode: match.code,
-      localNumber: fixedLocalNumber,
-    };
-  }
-
-  const digits = normalized.replace(/\D/g, "");
-  const fixedDigits =
-    digits.length > 10 && digits.startsWith("52")
-      ? digits.slice(2, 12)
-      : digits.slice(0, 10);
-
-  return {
-    countryCode: "+52",
-    localNumber: fixedDigits,
-  };
-}
-
-function getPhoneMeta(phone: string | null) {
-  if (!phone) {
-    return { flag: "🇲🇽", code: "+52", formatted: null };
-  }
-
-  const normalized = phone.replace(/[^\d+]/g, "");
-  const match = COUNTRY_OPTIONS.find((option) => normalized.startsWith(option.code));
-  if (match) {
-    return {
-      flag: match.flag,
-      code: match.code,
-      formatted: formatPhoneNumber(phone),
-    };
-  }
-
-  return {
-    flag: "🇲🇽",
-    code: "+52",
-    formatted: formatPhoneNumber(phone),
-  };
-}
-
 function getPhoneSummary(phone: string | null) {
-  const meta = getPhoneMeta(phone);
-  const parts = splitPhoneParts(phone);
-  if (!parts.localNumber) return "Sin teléfono";
-  return `${meta.flag} ${parts.countryCode} ${formatLocalPhone(parts.localNumber)}`;
+  const parsed = phone ? parsePhoneNumber(normalizeLeadPhone(phone) || "") : null;
+  if (!parsed) return "Sin teléfono";
+  return `${parsed.countryCallingCode ? `+${parsed.countryCallingCode} ` : ""}${parsed.formatNational()}`;
 }
 
-function formatLocalPhone(localNumber: string) {
-  const digits = localNumber.replace(/\D/g, "").slice(0, 10);
-  if (digits.length < 10) return digits;
-  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+function normalizeLeadPhone(phone: string | null) {
+  if (!phone) return "";
+
+  const raw = phone.trim();
+  const digits = raw.replace(/\D/g, "");
+
+  if (raw.startsWith("+")) {
+    const parsed = parsePhoneNumber(raw);
+    return parsed?.number || raw;
+  }
+
+  if (digits.length === 10) {
+    return `+52${digits}`;
+  }
+
+  if (digits.length === 12 && digits.startsWith("52")) {
+    return `+${digits}`;
+  }
+
+  if (digits.length > 10 && digits.startsWith("52")) {
+    return `+52${digits.slice(2, 12)}`;
+  }
+
+  return raw;
 }
 
 function splitAlternatePhone(notes: string | null) {
@@ -233,10 +172,8 @@ type LeadEditorState = {
   id: string;
   full_name: string;
   email: string;
-  phoneCountryCode: string;
-  phoneLocalNumber: string;
-  alternatePhoneCountryCode: string;
-  alternatePhoneLocalNumber: string;
+  phone: string;
+  alternatePhone: string;
   company: string;
   education_level: string;
   city: string;
@@ -328,16 +265,12 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
 
   function openEditor(lead: Lead) {
     const { alternatePhone, cleanNotes } = splitAlternatePhone(lead.notes);
-    const primaryPhone = splitPhoneParts(lead.phone);
-    const secondaryPhone = splitPhoneParts(alternatePhone);
     setEditingLead({
       id: lead.id,
       full_name: lead.full_name,
       email: lead.email,
-      phoneCountryCode: primaryPhone.countryCode,
-      phoneLocalNumber: primaryPhone.localNumber,
-      alternatePhoneCountryCode: secondaryPhone.countryCode,
-      alternatePhoneLocalNumber: secondaryPhone.localNumber,
+      phone: normalizeLeadPhone(lead.phone),
+      alternatePhone: normalizeLeadPhone(alternatePhone),
       company: lead.company || "",
       education_level: lead.education_level || "",
       city: lead.city || "",
@@ -359,23 +292,23 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
   async function handleSaveLead() {
     if (!editingLead) return;
 
-    const normalizedPhone = normalizePhoneForSave(editingLead.phoneCountryCode, editingLead.phoneLocalNumber);
-    const normalizedAlternatePhone = editingLead.alternatePhoneLocalNumber
-      ? normalizePhoneForSave(editingLead.alternatePhoneCountryCode, editingLead.alternatePhoneLocalNumber)
+    const normalizedPhone = normalizeLeadPhone(editingLead.phone);
+    const normalizedAlternatePhone = editingLead.alternatePhone
+      ? normalizeLeadPhone(editingLead.alternatePhone)
       : null;
 
     if (!normalizedPhone) {
       setEditorMessage({
         type: "error",
-        text: "El telefono principal debe tener 10 digitos o formato +52 correcto.",
+        text: "El telefono principal es obligatorio y debe ser valido.",
       });
       return;
     }
 
-    if (editingLead.alternatePhoneLocalNumber && !normalizedAlternatePhone) {
+    if (editingLead.alternatePhone && !normalizedAlternatePhone) {
       setEditorMessage({
         type: "error",
-        text: "El telefono alterno debe tener 10 digitos o formato +52 correcto.",
+        text: "El telefono alterno debe ser valido.",
       });
       return;
     }
@@ -683,7 +616,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                             onClick={(e) => e.stopPropagation()}
                             className="whitespace-nowrap text-sm font-medium text-slate-700 underline decoration-slate-200 underline-offset-4 transition hover:text-[#9B1D20]"
                           >
-                            {getPhoneMeta(lead.phone).formatted}
+                            {formatPhoneNumber(lead.phone)}
                           </a>
                         ) : (
                           <span className="text-slate-300">—</span>
@@ -829,19 +762,23 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
 
               <div className="grid gap-4 xl:grid-cols-2">
                 <Field label="Teléfono principal">
-                  <PhoneField
-                    countryCode={editingLead.phoneCountryCode}
-                    localNumber={editingLead.phoneLocalNumber}
-                    onCountryCodeChange={(value) => setEditingLead({ ...editingLead, phoneCountryCode: value })}
-                    onLocalNumberChange={(value) => setEditingLead({ ...editingLead, phoneLocalNumber: sanitizePhoneInput(value) })}
+                  <PhoneInput
+                    defaultCountry="MX"
+                    countries={["MX", "US", "AR", "CO"]}
+                    international={false}
+                    countryCallingCodeEditable={false}
+                    value={editingLead.phone as PhoneValue}
+                    onChange={(value) => setEditingLead({ ...editingLead, phone: (value as string) || "" })}
                   />
                 </Field>
                 <Field label="Otro número de contacto">
-                  <PhoneField
-                    countryCode={editingLead.alternatePhoneCountryCode}
-                    localNumber={editingLead.alternatePhoneLocalNumber}
-                    onCountryCodeChange={(value) => setEditingLead({ ...editingLead, alternatePhoneCountryCode: value })}
-                    onLocalNumberChange={(value) => setEditingLead({ ...editingLead, alternatePhoneLocalNumber: sanitizePhoneInput(value) })}
+                  <PhoneInput
+                    defaultCountry="MX"
+                    countries={["MX", "US", "AR", "CO"]}
+                    international={false}
+                    countryCallingCodeEditable={false}
+                    value={editingLead.alternatePhone as PhoneValue}
+                    onChange={(value) => setEditingLead({ ...editingLead, alternatePhone: (value as string) || "" })}
                   />
                 </Field>
               </div>
@@ -905,7 +842,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                   <div className="rounded-2xl border border-[#efe4d3] bg-white px-4 py-3">
                     <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Teléfono</span>
                     <span className="mt-1 block font-medium text-slate-900">
-                      {getPhoneSummary(normalizePhoneForSave(editingLead.phoneCountryCode, editingLead.phoneLocalNumber))}
+                      {getPhoneSummary(editingLead.phone)}
                     </span>
                   </div>
                   <div className="rounded-2xl border border-[#efe4d3] bg-white px-4 py-3">
@@ -977,42 +914,5 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">{label}</span>
       <div className="mt-2">{children}</div>
     </label>
-  );
-}
-
-function PhoneField({
-  countryCode,
-  localNumber,
-  onCountryCodeChange,
-  onLocalNumberChange,
-}: {
-  countryCode: string;
-  localNumber: string;
-  onCountryCodeChange: (value: string) => void;
-  onLocalNumberChange: (value: string) => void;
-}) {
-  return (
-    <div className="grid grid-cols-[132px_minmax(0,1fr)] gap-3">
-      <select
-        value={countryCode}
-        onChange={(e) => onCountryCodeChange(e.target.value)}
-        className="h-12 min-w-0 rounded-[14px] border border-[#e8decf] bg-[#fcfaf6] px-3 text-sm font-medium text-slate-900 outline-none transition focus:border-[#caa971]"
-      >
-        {COUNTRY_OPTIONS.map((option) => (
-          <option key={option.code} value={option.code}>
-            {`${option.flag} ${option.code}`}
-          </option>
-        ))}
-      </select>
-      <input
-        value={localNumber}
-        onChange={(e) => onLocalNumberChange(e.target.value)}
-        inputMode="tel"
-        autoComplete="tel-national"
-        maxLength={10}
-        className="h-12 min-w-0 rounded-[14px] border border-[#e8decf] bg-[#fcfaf6] px-4 text-sm text-slate-900 outline-none transition focus:border-[#caa971]"
-        placeholder="(998) 777-6523"
-      />
-    </div>
   );
 }
