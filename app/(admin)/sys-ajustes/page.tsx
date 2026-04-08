@@ -1,23 +1,39 @@
-import { Settings } from "lucide-react";
+import { connection } from "next/server";
+import { redirect } from "next/navigation";
 
-export default function AdminAjustesPage() {
+import { AdminSettingsPage } from "@/components/admin/admin-settings-page";
+import { getPortalUser } from "@/lib/portal/data";
+
+function formatDate(value: string | null) {
+  if (!value) return "No disponible";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "No disponible";
+
+  return date.toLocaleString("es-MX", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
+export default async function AdminAjustesRoute() {
+  await connection();
+  const user = await getPortalUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
-          <Settings className="h-5 w-5" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Ajustes</h1>
-          <p className="text-sm text-slate-500">Configuración de la plataforma</p>
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-        <Settings className="h-10 w-10 text-slate-300 mx-auto mb-4 animate-[spin_4s_linear_infinite]" />
-        <h3 className="text-lg font-bold text-slate-700">Módulo en construcción</h3>
-        <p className="text-slate-500 text-sm mt-2">Aquí podrás configurar variables del sistema y gestionar usuarios administrativos.</p>
-      </div>
-    </div>
+    <AdminSettingsPage
+      user={{
+        fullName: user.profile?.full_name || user.email || "Administrador AUA",
+        email: user.email,
+        role: user.profile?.role || "admin",
+        membershipLabel: user.profile?.membership_label || "Administrador activo",
+        createdAtLabel: formatDate(user.createdAt),
+        emailConfirmedLabel: user.emailConfirmedAt ? "Confirmado" : "Pendiente",
+      }}
+    />
   );
 }
