@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition, useRef } from "react";
-import { Download, Search, Upload } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { Download, Search, Upload, X } from "lucide-react";
 import Papa from "papaparse";
 
 type Lead = {
@@ -59,6 +59,22 @@ async function updateLeadStatus(id: string, status: string) {
   });
 }
 
+async function updateLead(
+  id: string,
+  payload: Partial<Lead> & { source?: string; notes?: string | null },
+) {
+  const response = await fetch(`/api/admin/leads/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({ error: "No se pudo guardar." }));
+    throw new Error(data.error || "No se pudo guardar.");
+  }
+}
+
 async function updateLeadStatuses(ids: string[], status: string) {
   const response = await fetch("/api/admin/leads/bulk", {
     method: "PATCH",
@@ -101,6 +117,36 @@ function formatPhoneNumber(phone: string | null) {
   return phone;
 }
 
+function splitAlternatePhone(notes: string | null) {
+  if (!notes) return { alternatePhone: "", cleanNotes: "" };
+  const lines = notes.split("\n");
+  const alternateLine = lines.find((line) => line.toLowerCase().startsWith("tel alterno:"));
+  const alternatePhone = alternateLine ? alternateLine.replace(/^tel alterno:\s*/i, "").trim() : "";
+  const cleanNotes = lines.filter((line) => !line.toLowerCase().startsWith("tel alterno:")).join("\n").trim();
+  return { alternatePhone, cleanNotes };
+}
+
+function buildNotes(notes: string, alternatePhone: string) {
+  const sections = [];
+  if (alternatePhone.trim()) sections.push(`Tel alterno: ${alternatePhone.trim()}`);
+  if (notes.trim()) sections.push(notes.trim());
+  return sections.join("\n");
+}
+
+type LeadEditorState = {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  alternatePhone: string;
+  company: string;
+  education_level: string;
+  city: string;
+  source: string;
+  status: string;
+  notes: string;
+};
+
 export function LeadsTable({ leads }: { leads: Lead[] }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -109,6 +155,9 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkStatus, setBulkStatus] = useState("contactado");
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingLead, setEditingLead] = useState<LeadEditorState | null>(null);
+  const [editorMessage, setEditorMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Pagination and Column filters
   const [page, setPage] = useState(1);
@@ -175,6 +224,58 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
     startTransition(async () => {
       await updateLeadStatus(id, status);
       router.refresh();
+    });
+  }
+
+  function openEditor(lead: Lead) {
+    const { alternatePhone, cleanNotes } = splitAlternatePhone(lead.notes);
+    setEditingLead({
+      id: lead.id,
+      full_name: lead.full_name,
+      email: lead.email,
+      phone: lead.phone || "",
+      alternatePhone,
+      company: lead.company || "",
+      education_level: lead.education_level || "",
+      city: lead.city || "",
+      source: lead.source || "",
+      status: lead.status,
+      notes: cleanNotes,
+    });
+    setEditorMessage(null);
+    setEditorOpen(true);
+  }
+
+  function closeEditor() {
+    setEditorOpen(false);
+    setEditingLead(null);
+    setEditorMessage(null);
+  }
+
+  async function handleSaveLead() {
+    if (!editingLead) return;
+
+    startTransition(async () => {
+      try {
+        await updateLead(editingLead.id, {
+          full_name: editingLead.full_name,
+          email: editingLead.email,
+          phone: editingLead.phone,
+          company: editingLead.company || null,
+          education_level: editingLead.education_level || null,
+          city: editingLead.city || null,
+          source: editingLead.source,
+          status: editingLead.status,
+          notes: buildNotes(editingLead.notes, editingLead.alternatePhone) || null,
+        });
+        setEditorMessage({ type: "success", text: "Lead actualizado correctamente." });
+        router.refresh();
+      } catch (error) {
+        setEditorMessage({
+          type: "error",
+          text: error instanceof Error ? error.message : "No se pudo guardar el lead.",
+        });
+      }
     });
   }
 
@@ -250,7 +351,23 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
     });
   }
 
+  useEffect(() => {
+    if (!editorOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !isPending) {
+        closeEditor();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [editorOpen, isPending]);
+
+  const statusOptions = useMemo(() => Object.entries(STATUS_LABELS), []);
+
   return (
+    <>
     <div className="space-y-4">
       {/* Top Toolbar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -287,7 +404,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                 onChange={(e) => setBulkStatus(e.target.value)}
                 className="h-10 rounded-xl border border-slate-200 bg-white px-4 py-2 pr-8 text-sm font-medium text-slate-700 outline-none focus:border-[#9B1D20] appearance-none"
               >
-                {Object.entries(STATUS_LABELS).map(([value, { label }]) => (
+                {statusOptions.map(([value, { label }]) => (
                   <option key={value} value={value}>{label}</option>
                 ))}
               </select>
@@ -395,7 +512,13 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                             {initials}
                           </div>
                           <div>
-                            <p className="font-bold text-slate-900">{lead.full_name}</p>
+                            <button
+                              type="button"
+                              onClick={() => openEditor(lead)}
+                              className="text-left font-bold text-slate-900 transition hover:text-[#9B1D20]"
+                            >
+                              {lead.full_name}
+                            </button>
                             <p className="text-xs text-slate-500 hover:text-blue-600 cursor-pointer">{lead.email}</p>
                           </div>
                         </div>
@@ -431,7 +554,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                             onChange={(e) => handleStatusChange(lead.id, e.target.value)}
                             className={`w-full max-w-[140px] rounded-lg px-2.5 py-1 text-xs font-bold border outline-none cursor-pointer appearance-none transition-colors ${statusInfo.badge}`}
                           >
-                            {Object.entries(STATUS_LABELS).map(([value, { label }]) => (
+                            {statusOptions.map(([value, { label }]) => (
                               <option key={value} value={value}>{label}</option>
                             ))}
                           </select>
@@ -472,5 +595,168 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
         </div>
       </div>
     </div>
+    {editorOpen && editingLead ? (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-8">
+        <div className="relative w-full max-w-4xl rounded-[30px] border border-[#e8decf] bg-white shadow-2xl">
+          <button
+            type="button"
+            onClick={closeEditor}
+            className="absolute right-5 top-5 inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:text-slate-900"
+          >
+            <X className="h-4 w-4" />
+          </button>
+
+          <div className="border-b border-[#efe4d3] px-8 py-6 pr-20">
+            <h2 className="text-2xl font-bold text-slate-900">Editar lead</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Actualiza contacto, notas comerciales y etapa desde una sola vista.
+            </p>
+          </div>
+
+          <div className="grid gap-6 px-8 py-6 lg:grid-cols-[1.15fr_0.85fr]">
+            <div className="space-y-5">
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Nombre completo">
+                  <input
+                    value={editingLead.full_name}
+                    onChange={(e) => setEditingLead({ ...editingLead, full_name: e.target.value })}
+                    className="h-12 w-full rounded-[14px] border border-[#e8decf] bg-[#fcfaf6] px-4 text-sm text-slate-900 outline-none transition focus:border-[#caa971]"
+                  />
+                </Field>
+                <Field label="Correo electrónico">
+                  <input
+                    type="email"
+                    value={editingLead.email}
+                    onChange={(e) => setEditingLead({ ...editingLead, email: e.target.value })}
+                    className="h-12 w-full rounded-[14px] border border-[#e8decf] bg-[#fcfaf6] px-4 text-sm text-slate-900 outline-none transition focus:border-[#caa971]"
+                  />
+                </Field>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Teléfono principal">
+                  <input
+                    value={editingLead.phone}
+                    onChange={(e) => setEditingLead({ ...editingLead, phone: e.target.value })}
+                    className="h-12 w-full rounded-[14px] border border-[#e8decf] bg-[#fcfaf6] px-4 text-sm text-slate-900 outline-none transition focus:border-[#caa971]"
+                  />
+                </Field>
+                <Field label="Otro número de contacto">
+                  <input
+                    value={editingLead.alternatePhone}
+                    onChange={(e) => setEditingLead({ ...editingLead, alternatePhone: e.target.value })}
+                    className="h-12 w-full rounded-[14px] border border-[#e8decf] bg-[#fcfaf6] px-4 text-sm text-slate-900 outline-none transition focus:border-[#caa971]"
+                    placeholder="Se guarda junto con las notas"
+                  />
+                </Field>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-3">
+                <Field label="Grado de estudios">
+                  <input
+                    value={editingLead.education_level}
+                    onChange={(e) => setEditingLead({ ...editingLead, education_level: e.target.value })}
+                    className="h-12 w-full rounded-[14px] border border-[#e8decf] bg-[#fcfaf6] px-4 text-sm text-slate-900 outline-none transition focus:border-[#caa971]"
+                  />
+                </Field>
+                <Field label="Ciudad">
+                  <input
+                    value={editingLead.city}
+                    onChange={(e) => setEditingLead({ ...editingLead, city: e.target.value })}
+                    className="h-12 w-full rounded-[14px] border border-[#e8decf] bg-[#fcfaf6] px-4 text-sm text-slate-900 outline-none transition focus:border-[#caa971]"
+                  />
+                </Field>
+                <Field label="Origen">
+                  <input
+                    value={editingLead.source}
+                    onChange={(e) => setEditingLead({ ...editingLead, source: e.target.value })}
+                    className="h-12 w-full rounded-[14px] border border-[#e8decf] bg-[#fcfaf6] px-4 text-sm text-slate-900 outline-none transition focus:border-[#caa971]"
+                  />
+                </Field>
+              </div>
+
+              <Field label="Notas del seguimiento">
+                <textarea
+                  value={editingLead.notes}
+                  onChange={(e) => setEditingLead({ ...editingLead, notes: e.target.value })}
+                  rows={7}
+                  className="w-full rounded-[18px] border border-[#e8decf] bg-[#fcfaf6] px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#caa971]"
+                  placeholder="Ej. pidió llamada mañana, interesado en beca parcial, referencia de otro alumno..."
+                />
+              </Field>
+            </div>
+
+            <div className="space-y-5">
+              <div className="rounded-[24px] border border-[#e8decf] bg-[#fcfaf6] p-5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Etapa comercial</p>
+                <select
+                  value={editingLead.status}
+                  onChange={(e) => setEditingLead({ ...editingLead, status: e.target.value })}
+                  className="mt-3 h-12 w-full rounded-[14px] border border-[#e8decf] bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#caa971]"
+                >
+                  {statusOptions.map(([value, { label }]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="rounded-[24px] border border-[#e8decf] bg-[#fcfaf6] p-5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Resumen rápido</p>
+                <div className="mt-4 space-y-3 text-sm text-slate-600">
+                  <div className="rounded-2xl border border-[#efe4d3] bg-white px-4 py-3">
+                    <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Correo</span>
+                    <span className="mt-1 block font-medium text-slate-900">{editingLead.email || "Sin correo"}</span>
+                  </div>
+                  <div className="rounded-2xl border border-[#efe4d3] bg-white px-4 py-3">
+                    <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Teléfono</span>
+                    <span className="mt-1 block font-medium text-slate-900">{formatPhoneNumber(editingLead.phone) || "Sin teléfono"}</span>
+                  </div>
+                </div>
+              </div>
+
+              {editorMessage ? (
+                <div
+                  className={`rounded-2xl border px-4 py-3 text-sm ${
+                    editorMessage.type === "success"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-red-200 bg-red-50 text-red-700"
+                  }`}
+                >
+                  {editorMessage.text}
+                </div>
+              ) : null}
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={closeEditor}
+                  className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-xs font-bold uppercase tracking-[0.18em] text-slate-700 transition hover:bg-slate-50"
+                >
+                  Cerrar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveLead}
+                  disabled={isPending}
+                  className="inline-flex h-11 items-center justify-center rounded-xl bg-[#9B3328] px-5 text-xs font-bold uppercase tracking-[0.18em] text-white transition hover:bg-[#842b22] disabled:opacity-50"
+                >
+                  {isPending ? "Guardando..." : "Guardar cambios"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ) : null}
+    </>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">{label}</span>
+      <div className="mt-2">{children}</div>
+    </label>
   );
 }

@@ -41,11 +41,12 @@ export default async function AdminLeadsPage() {
       </div>
 
       {/* Stats rápidas */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-6">
         {[
           { label: "Total", value: leads.length, color: "text-slate-700" },
           { label: "Nuevos", value: leads.filter(l => l.status === "nuevo").length, color: "text-blue-600" },
           { label: "Contactados", value: leads.filter(l => l.status === "contactado").length, color: "text-yellow-600" },
+          { label: "En seguimiento", value: leads.filter(l => l.status === "en_seguimiento").length, color: "text-purple-600" },
           { label: "Ganados", value: leads.filter(l => l.status === "cerrado_ganado").length, color: "text-green-600" },
           { label: "Perdidos", value: leads.filter(l => l.status === "cerrado_perdido").length, color: "text-red-600" },
         ].map(stat => (
