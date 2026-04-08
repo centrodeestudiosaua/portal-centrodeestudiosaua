@@ -11,7 +11,7 @@ const ADMIN_TABS = [
 
 const PUBLIC_ROUTES = [
   "/inscribirse", "/recuperar-acceso", "/admision", 
-  "/api/checkout", "/api/webhooks"
+  "/api/checkout", "/api/webhooks", "/api/leads"
 ];
 
 export async function updateSession(request: NextRequest) {
