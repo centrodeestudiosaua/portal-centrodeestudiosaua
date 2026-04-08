@@ -3,6 +3,22 @@ import { createClient as createAdminClient } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/server";
 
+function normalizePhone(value: string | null | undefined) {
+  const raw = (value || "").trim();
+  if (!raw) return null;
+
+  if (raw.startsWith("+")) {
+    const digits = raw.slice(1).replace(/\D/g, "");
+    if (digits.length === 12 && digits.startsWith("52")) {
+      return `+${digits}`;
+    }
+    return null;
+  }
+
+  const digits = raw.replace(/\D/g, "");
+  return digits.length === 10 ? digits : null;
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -44,7 +60,7 @@ export async function PATCH(
     updates.email = body.email.trim().toLowerCase();
   }
   if (typeof body.phone !== "undefined") {
-    updates.phone = body.phone?.trim() || null;
+    updates.phone = normalizePhone(body.phone);
   }
   if (typeof body.company !== "undefined") {
     updates.company = body.company?.trim() || null;
@@ -69,6 +85,10 @@ export async function PATCH(
     return NextResponse.json({ error: "Correo invalido" }, { status: 400 });
   }
 
+  if (typeof body.phone !== "undefined" && body.phone && !updates.phone) {
+    return NextResponse.json({ error: "Telefono invalido" }, { status: 400 });
+  }
+
   if (typeof updates.full_name === "string" && !updates.full_name) {
     return NextResponse.json({ error: "Nombre obligatorio" }, { status: 400 });
   }
@@ -82,6 +102,42 @@ export async function PATCH(
   const { error } = await admin
     .from("leads")
     .update(updates)
+    .eq("id", id);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  return NextResponse.json({ ok: true });
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { data: profile } = await supabase
+    .from("student_profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profile?.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { id } = await params;
+
+  const admin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  );
+
+  const { error } = await admin
+    .from("leads")
+    .delete()
     .eq("id", id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { Download, Search, Upload, X } from "lucide-react";
+import { Download, PencilLine, Search, Trash2, Upload, X } from "lucide-react";
 import Papa from "papaparse";
 
 type Lead = {
@@ -27,6 +27,13 @@ const STATUS_LABELS: Record<string, { label: string; color: string; badge: strin
   cerrado_ganado:  { label: "Ganado ✓",       color: "bg-green-100 text-green-700",     badge: "bg-green-50 text-green-700 border-green-200" },
   cerrado_perdido: { label: "Perdido",        color: "bg-red-100 text-red-700",         badge: "bg-red-50 text-red-700 border-red-200" },
 };
+
+const COUNTRY_OPTIONS = [
+  { code: "+52", flag: "🇲🇽", label: "México", nationalLength: 10 },
+  { code: "+1", flag: "🇺🇸", label: "EE. UU.", nationalLength: 10 },
+  { code: "+54", flag: "🇦🇷", label: "Argentina", nationalLength: 10 },
+  { code: "+57", flag: "🇨🇴", label: "Colombia", nationalLength: 10 },
+];
 
 function exportCSV(leads: Lead[]) {
   const headers = ["Nombre", "Email", "Teléfono", "Empresa", "Grado de Estudios", "Ciudad", "Fuente", "Estado", "Fecha"];
@@ -88,6 +95,17 @@ async function updateLeadStatuses(ids: string[], status: string) {
   }
 }
 
+async function deleteLead(id: string) {
+  const response = await fetch(`/api/admin/leads/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({ error: "No se pudo eliminar." }));
+    throw new Error(data.error || "No se pudo eliminar.");
+  }
+}
+
 function getInitials(name: string) {
   const parts = name.trim().split(" ");
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
@@ -117,6 +135,60 @@ function formatPhoneNumber(phone: string | null) {
   return phone;
 }
 
+function sanitizePhoneInput(value: string) {
+  return value.replace(/\D/g, "").slice(0, 10);
+}
+
+function normalizePhoneForSave(countryCode: string, value: string) {
+  const localDigits = sanitizePhoneInput(value);
+  const country = COUNTRY_OPTIONS.find((option) => option.code === countryCode) ?? COUNTRY_OPTIONS[0];
+  if (localDigits.length !== country.nationalLength) return null;
+  return `${country.code}${localDigits}`;
+}
+
+function splitPhoneParts(phone: string | null) {
+  if (!phone) {
+    return { countryCode: "+52", localNumber: "" };
+  }
+
+  const normalized = phone.replace(/[^\d+]/g, "");
+  const match = COUNTRY_OPTIONS.find((option) => normalized.startsWith(option.code));
+  if (match) {
+    return {
+      countryCode: match.code,
+      localNumber: normalized.slice(match.code.length).replace(/\D/g, "").slice(0, match.nationalLength),
+    };
+  }
+
+  const digits = normalized.replace(/\D/g, "");
+  return {
+    countryCode: "+52",
+    localNumber: digits.slice(0, 10),
+  };
+}
+
+function getPhoneMeta(phone: string | null) {
+  if (!phone) {
+    return { flag: "🇲🇽", code: "+52", formatted: null };
+  }
+
+  const normalized = phone.replace(/[^\d+]/g, "");
+  const match = COUNTRY_OPTIONS.find((option) => normalized.startsWith(option.code));
+  if (match) {
+    return {
+      flag: match.flag,
+      code: match.code,
+      formatted: formatPhoneNumber(phone),
+    };
+  }
+
+  return {
+    flag: "🇲🇽",
+    code: "+52",
+    formatted: formatPhoneNumber(phone),
+  };
+}
+
 function splitAlternatePhone(notes: string | null) {
   if (!notes) return { alternatePhone: "", cleanNotes: "" };
   const lines = notes.split("\n");
@@ -137,14 +209,17 @@ type LeadEditorState = {
   id: string;
   full_name: string;
   email: string;
-  phone: string;
-  alternatePhone: string;
+  phoneCountryCode: string;
+  phoneLocalNumber: string;
+  alternatePhoneCountryCode: string;
+  alternatePhoneLocalNumber: string;
   company: string;
   education_level: string;
   city: string;
   source: string;
   status: string;
   notes: string;
+  created_at: string;
 };
 
 export function LeadsTable({ leads }: { leads: Lead[] }) {
@@ -229,18 +304,23 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
 
   function openEditor(lead: Lead) {
     const { alternatePhone, cleanNotes } = splitAlternatePhone(lead.notes);
+    const primaryPhone = splitPhoneParts(lead.phone);
+    const secondaryPhone = splitPhoneParts(alternatePhone);
     setEditingLead({
       id: lead.id,
       full_name: lead.full_name,
       email: lead.email,
-      phone: lead.phone || "",
-      alternatePhone,
+      phoneCountryCode: primaryPhone.countryCode,
+      phoneLocalNumber: primaryPhone.localNumber,
+      alternatePhoneCountryCode: secondaryPhone.countryCode,
+      alternatePhoneLocalNumber: secondaryPhone.localNumber,
       company: lead.company || "",
       education_level: lead.education_level || "",
       city: lead.city || "",
       source: lead.source || "",
       status: lead.status,
       notes: cleanNotes,
+      created_at: lead.created_at,
     });
     setEditorMessage(null);
     setEditorOpen(true);
@@ -255,18 +335,39 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
   async function handleSaveLead() {
     if (!editingLead) return;
 
+    const normalizedPhone = normalizePhoneForSave(editingLead.phoneCountryCode, editingLead.phoneLocalNumber);
+    const normalizedAlternatePhone = editingLead.alternatePhoneLocalNumber
+      ? normalizePhoneForSave(editingLead.alternatePhoneCountryCode, editingLead.alternatePhoneLocalNumber)
+      : null;
+
+    if (!normalizedPhone) {
+      setEditorMessage({
+        type: "error",
+        text: "El telefono principal debe tener 10 digitos o formato +52 correcto.",
+      });
+      return;
+    }
+
+    if (editingLead.alternatePhoneLocalNumber && !normalizedAlternatePhone) {
+      setEditorMessage({
+        type: "error",
+        text: "El telefono alterno debe tener 10 digitos o formato +52 correcto.",
+      });
+      return;
+    }
+
     startTransition(async () => {
       try {
         await updateLead(editingLead.id, {
           full_name: editingLead.full_name,
           email: editingLead.email,
-          phone: editingLead.phone,
+          phone: normalizedPhone,
           company: editingLead.company || null,
           education_level: editingLead.education_level || null,
           city: editingLead.city || null,
           source: editingLead.source,
           status: editingLead.status,
-          notes: buildNotes(editingLead.notes, editingLead.alternatePhone) || null,
+          notes: buildNotes(editingLead.notes, normalizedAlternatePhone || "") || null,
         });
         setEditorMessage({ type: "success", text: "Lead actualizado correctamente." });
         router.refresh();
@@ -274,6 +375,23 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
         setEditorMessage({
           type: "error",
           text: error instanceof Error ? error.message : "No se pudo guardar el lead.",
+        });
+      }
+    });
+  }
+
+  function handleDeleteLead() {
+    if (!editingLead) return;
+
+    startTransition(async () => {
+      try {
+        await deleteLead(editingLead.id);
+        closeEditor();
+        router.refresh();
+      } catch (error) {
+        setEditorMessage({
+          type: "error",
+          text: error instanceof Error ? error.message : "No se pudo eliminar el lead.",
         });
       }
     });
@@ -462,7 +580,10 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                 <th className="px-4 py-3 font-bold text-slate-800">Teléfono</th>
                 <th className="px-4 py-3 font-bold text-slate-800">Grado de Estudios</th>
                 <th className="px-4 py-3 font-bold text-slate-800">Ciudad</th>
+                <th className="px-4 py-3 font-bold text-slate-800">Fuente</th>
+                <th className="px-4 py-3 font-bold text-slate-800">Fecha</th>
                 <th className="px-4 py-3 font-bold text-slate-800">Estatus</th>
+                <th className="px-4 py-3 font-bold text-slate-800 text-right">Acción</th>
               </tr>
               {/* Filter inputs sub-row */}
               <tr className="border-b border-slate-100 bg-slate-50/50">
@@ -479,15 +600,18 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                 <th className="px-4 py-2">
                   <input type="text" placeholder="Filtrar..." value={filters.city} onChange={e => {setFilters({...filters, city: e.target.value}); setPage(1);}} className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-600 outline-none focus:border-slate-400" />
                 </th>
+                <th className="px-4 py-2"></th>
+                <th className="px-4 py-2"></th>
                 <th className="px-4 py-2">
                   <input type="text" placeholder="Filtrar..." value={filters.status} onChange={e => {setFilters({...filters, status: e.target.value}); setPage(1);}} className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-600 outline-none focus:border-slate-400" />
                 </th>
+                <th className="px-4 py-2"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-slate-400">
+                  <td colSpan={9} className="px-4 py-10 text-center text-slate-400">
                     No se encontraron leads con estos filtros.
                   </td>
                 </tr>
@@ -529,7 +653,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                             href={`tel:${lead.phone}`}
                             className="text-sm font-medium text-slate-700 underline decoration-slate-200 underline-offset-4 transition hover:text-[#9B1D20]"
                           >
-                            {formatPhoneNumber(lead.phone)}
+                            {getPhoneMeta(lead.phone).formatted}
                           </a>
                         ) : (
                           <span className="text-slate-300">—</span>
@@ -546,6 +670,18 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                         <p className="text-sm font-medium text-slate-700">{lead.city || <span className="text-slate-300">—</span>}</p>
                       </td>
                       <td className="px-4 py-4">
+                        <p className="text-sm font-medium text-slate-700">{lead.source || <span className="text-slate-300">—</span>}</p>
+                      </td>
+                      <td className="px-4 py-4">
+                        <p className="text-sm font-medium text-slate-700">
+                          {new Date(lead.created_at).toLocaleDateString("es-MX", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </p>
+                      </td>
+                      <td className="px-4 py-4">
                         <div className="relative">
                           {/* We use a select over the badge for quick updates */}
                           <select
@@ -559,6 +695,16 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                             ))}
                           </select>
                         </div>
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <button
+                          type="button"
+                          onClick={() => openEditor(lead)}
+                          className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                        >
+                          <PencilLine className="h-3.5 w-3.5" />
+                          Editar
+                        </button>
                       </td>
                     </tr>
                   );
@@ -635,18 +781,19 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <Field label="Teléfono principal">
-                  <input
-                    value={editingLead.phone}
-                    onChange={(e) => setEditingLead({ ...editingLead, phone: e.target.value })}
-                    className="h-12 w-full rounded-[14px] border border-[#e8decf] bg-[#fcfaf6] px-4 text-sm text-slate-900 outline-none transition focus:border-[#caa971]"
+                  <PhoneField
+                    countryCode={editingLead.phoneCountryCode}
+                    localNumber={editingLead.phoneLocalNumber}
+                    onCountryCodeChange={(value) => setEditingLead({ ...editingLead, phoneCountryCode: value })}
+                    onLocalNumberChange={(value) => setEditingLead({ ...editingLead, phoneLocalNumber: sanitizePhoneInput(value) })}
                   />
                 </Field>
                 <Field label="Otro número de contacto">
-                  <input
-                    value={editingLead.alternatePhone}
-                    onChange={(e) => setEditingLead({ ...editingLead, alternatePhone: e.target.value })}
-                    className="h-12 w-full rounded-[14px] border border-[#e8decf] bg-[#fcfaf6] px-4 text-sm text-slate-900 outline-none transition focus:border-[#caa971]"
-                    placeholder="Se guarda junto con las notas"
+                  <PhoneField
+                    countryCode={editingLead.alternatePhoneCountryCode}
+                    localNumber={editingLead.alternatePhoneLocalNumber}
+                    onCountryCodeChange={(value) => setEditingLead({ ...editingLead, alternatePhoneCountryCode: value })}
+                    onLocalNumberChange={(value) => setEditingLead({ ...editingLead, alternatePhoneLocalNumber: sanitizePhoneInput(value) })}
                   />
                 </Field>
               </div>
@@ -709,7 +856,22 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                   </div>
                   <div className="rounded-2xl border border-[#efe4d3] bg-white px-4 py-3">
                     <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Teléfono</span>
-                    <span className="mt-1 block font-medium text-slate-900">{formatPhoneNumber(editingLead.phone) || "Sin teléfono"}</span>
+                    <span className="mt-1 block font-medium text-slate-900">
+                      {`${COUNTRY_OPTIONS.find((option) => option.code === editingLead.phoneCountryCode)?.flag || "🇲🇽"} ${editingLead.phoneCountryCode} ${formatPhoneNumber(`${editingLead.phoneCountryCode}${editingLead.phoneLocalNumber}`) || editingLead.phoneLocalNumber || "Sin teléfono"}`}
+                    </span>
+                  </div>
+                  <div className="rounded-2xl border border-[#efe4d3] bg-white px-4 py-3">
+                    <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Alta</span>
+                    <span className="mt-1 block font-medium text-slate-900">
+                      {new Date(editingLead.created_at).toLocaleString("es-MX", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
+                    </span>
+                  </div>
+                  <div className="rounded-2xl border border-[#efe4d3] bg-white px-4 py-3">
+                    <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Fuente</span>
+                    <span className="mt-1 block font-medium text-slate-900">{editingLead.source || "Sin fuente"}</span>
                   </div>
                 </div>
               </div>
@@ -727,6 +889,15 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
               ) : null}
 
               <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={handleDeleteLead}
+                  disabled={isPending}
+                  className="inline-flex h-11 items-center justify-center rounded-xl border border-red-200 bg-red-50 px-5 text-xs font-bold uppercase tracking-[0.18em] text-red-700 transition hover:bg-red-100 disabled:opacity-50"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Eliminar lead
+                </button>
                 <button
                   type="button"
                   onClick={closeEditor}
@@ -758,5 +929,42 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">{label}</span>
       <div className="mt-2">{children}</div>
     </label>
+  );
+}
+
+function PhoneField({
+  countryCode,
+  localNumber,
+  onCountryCodeChange,
+  onLocalNumberChange,
+}: {
+  countryCode: string;
+  localNumber: string;
+  onCountryCodeChange: (value: string) => void;
+  onLocalNumberChange: (value: string) => void;
+}) {
+  return (
+    <div className="flex gap-3">
+      <select
+        value={countryCode}
+        onChange={(e) => onCountryCodeChange(e.target.value)}
+        className="h-12 w-[130px] rounded-[14px] border border-[#e8decf] bg-[#fcfaf6] px-3 text-sm font-medium text-slate-900 outline-none transition focus:border-[#caa971]"
+      >
+        {COUNTRY_OPTIONS.map((option) => (
+          <option key={option.code} value={option.code}>
+            {`${option.flag} ${option.code}`}
+          </option>
+        ))}
+      </select>
+      <input
+        value={localNumber}
+        onChange={(e) => onLocalNumberChange(e.target.value)}
+        inputMode="tel"
+        autoComplete="tel-national"
+        maxLength={10}
+        className="h-12 flex-1 rounded-[14px] border border-[#e8decf] bg-[#fcfaf6] px-4 text-sm text-slate-900 outline-none transition focus:border-[#caa971]"
+        placeholder="9987776523"
+      />
+    </div>
   );
 }
