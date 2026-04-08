@@ -154,16 +154,27 @@ function splitPhoneParts(phone: string | null) {
   const normalized = phone.replace(/[^\d+]/g, "");
   const match = COUNTRY_OPTIONS.find((option) => normalized.startsWith(option.code));
   if (match) {
+    const rawLocalNumber = normalized.slice(match.code.length).replace(/\D/g, "");
+    const fixedLocalNumber =
+      match.code === "+52" && rawLocalNumber.length > match.nationalLength && rawLocalNumber.startsWith("52")
+        ? rawLocalNumber.slice(2, 2 + match.nationalLength)
+        : rawLocalNumber.slice(0, match.nationalLength);
+
     return {
       countryCode: match.code,
-      localNumber: normalized.slice(match.code.length).replace(/\D/g, "").slice(0, match.nationalLength),
+      localNumber: fixedLocalNumber,
     };
   }
 
   const digits = normalized.replace(/\D/g, "");
+  const fixedDigits =
+    digits.length > 10 && digits.startsWith("52")
+      ? digits.slice(2, 12)
+      : digits.slice(0, 10);
+
   return {
     countryCode: "+52",
-    localNumber: digits.slice(0, 10),
+    localNumber: fixedDigits,
   };
 }
 
@@ -193,7 +204,13 @@ function getPhoneSummary(phone: string | null) {
   const meta = getPhoneMeta(phone);
   const parts = splitPhoneParts(phone);
   if (!parts.localNumber) return "Sin teléfono";
-  return `${meta.flag} ${parts.countryCode} ${formatPhoneNumber(parts.localNumber) || parts.localNumber}`;
+  return `${meta.flag} ${parts.countryCode} ${formatLocalPhone(parts.localNumber)}`;
+}
+
+function formatLocalPhone(localNumber: string) {
+  const digits = localNumber.replace(/\D/g, "").slice(0, 10);
+  if (digits.length < 10) return digits;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
 
 function splitAlternatePhone(notes: string | null) {
@@ -402,6 +419,10 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
         });
       }
     });
+  }
+
+  function handleRowOpen(lead: Lead) {
+    openEditor(lead);
   }
 
   function handleExport() {
@@ -634,10 +655,14 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                           type="checkbox"
                           checked={selectedIds.includes(lead.id)}
                           onChange={(e) => toggleLeadSelection(lead.id, e.target.checked)}
+                          onClick={(e) => e.stopPropagation()}
                           className="rounded border-slate-300"
                         />
                       </td>
-                      <td className="px-4 py-4">
+                      <td
+                        className="px-4 py-4 cursor-pointer"
+                        onClick={() => handleRowOpen(lead)}
+                      >
                         <div className="flex items-center gap-3">
                           <div className="flex h-8 w-8 shrink-0 flex-col items-center justify-center rounded-md bg-slate-100 border border-slate-200 text-xs font-bold text-slate-600">
                             {initials}
@@ -648,10 +673,14 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-4">
+                      <td
+                        className="px-4 py-4 cursor-pointer"
+                        onClick={() => handleRowOpen(lead)}
+                      >
                         {lead.phone ? (
                           <a
                             href={`tel:${lead.phone}`}
+                            onClick={(e) => e.stopPropagation()}
                             className="whitespace-nowrap text-sm font-medium text-slate-700 underline decoration-slate-200 underline-offset-4 transition hover:text-[#9B1D20]"
                           >
                             {getPhoneMeta(lead.phone).formatted}
@@ -660,20 +689,32 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                           <span className="text-slate-300">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-4">
+                      <td
+                        className="px-4 py-4 cursor-pointer"
+                        onClick={() => handleRowOpen(lead)}
+                      >
                         {lead.education_level ? (
                           <span className="inline-flex items-center rounded-full border border-slate-200 px-2.5 py-0.5 text-xs font-medium text-slate-600 bg-white">
                             {lead.education_level}
                           </span>
                         ) : <span className="text-slate-300">—</span>}
                       </td>
-                      <td className="px-4 py-4">
+                      <td
+                        className="px-4 py-4 cursor-pointer"
+                        onClick={() => handleRowOpen(lead)}
+                      >
                         <p className="text-sm font-medium text-slate-700">{lead.city || <span className="text-slate-300">—</span>}</p>
                       </td>
-                      <td className="px-4 py-4">
+                      <td
+                        className="px-4 py-4 cursor-pointer"
+                        onClick={() => handleRowOpen(lead)}
+                      >
                         <p className="text-sm font-medium text-slate-700">{lead.source || <span className="text-slate-300">—</span>}</p>
                       </td>
-                      <td className="px-4 py-4">
+                      <td
+                        className="px-4 py-4 cursor-pointer"
+                        onClick={() => handleRowOpen(lead)}
+                      >
                         <p className="text-sm font-medium text-slate-700">
                           {new Date(lead.created_at).toLocaleDateString("es-MX", {
                             day: "2-digit",
@@ -682,7 +723,10 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                           })}
                         </p>
                       </td>
-                      <td className="px-4 py-4">
+                      <td
+                        className="px-4 py-4"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <div className="relative">
                           {/* We use a select over the badge for quick updates */}
                           <select
@@ -697,7 +741,10 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                           </select>
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-right">
+                      <td
+                        className="px-4 py-4 text-right"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <button
                           type="button"
                           onClick={() => openEditor(lead)}
@@ -964,7 +1011,7 @@ function PhoneField({
         autoComplete="tel-national"
         maxLength={10}
         className="h-12 min-w-0 rounded-[14px] border border-[#e8decf] bg-[#fcfaf6] px-4 text-sm text-slate-900 outline-none transition focus:border-[#caa971]"
-        placeholder="9987776523"
+        placeholder="(998) 777-6523"
       />
     </div>
   );
