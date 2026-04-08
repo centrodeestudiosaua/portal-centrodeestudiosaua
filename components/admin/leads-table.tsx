@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition, useRef } from "react";
-import { Download, Search, Plus, Upload, ChevronLeft, ChevronRight, Settings2 } from "lucide-react";
+import { Download, Search, Upload } from "lucide-react";
 import Papa from "papaparse";
 
 type Lead = {
@@ -59,11 +59,46 @@ async function updateLeadStatus(id: string, status: string) {
   });
 }
 
+async function updateLeadStatuses(ids: string[], status: string) {
+  const response = await fetch("/api/admin/leads/bulk", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids, status }),
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({ error: "No se pudo actualizar." }));
+    throw new Error(data.error || "No se pudo actualizar.");
+  }
+}
+
 function getInitials(name: string) {
   const parts = name.trim().split(" ");
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
   if (parts.length === 1) return (parts[0][0] + (parts[0][1] || "")).toUpperCase();
   return "NA";
+}
+
+function formatPhoneNumber(phone: string | null) {
+  if (!phone) return null;
+
+  const cleaned = phone.replace(/[^\d+]/g, "");
+  if (cleaned.startsWith("+52") && cleaned.length === 13) {
+    const national = cleaned.slice(3);
+    return `+52 ${national.slice(0, 3)} ${national.slice(3, 6)} ${national.slice(6)}`;
+  }
+
+  const digits = cleaned.replace(/\D/g, "");
+  if (digits.length === 10) {
+    return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+  }
+
+  if (digits.length === 12 && digits.startsWith("52")) {
+    const national = digits.slice(2);
+    return `+52 ${national.slice(0, 3)} ${national.slice(3, 6)} ${national.slice(6)}`;
+  }
+
+  return phone;
 }
 
 export function LeadsTable({ leads }: { leads: Lead[] }) {
@@ -72,6 +107,8 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
   const [globalFilter, setGlobalFilter] = useState("todos");
   const [isPending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkStatus, setBulkStatus] = useState("contactado");
 
   // Pagination and Column filters
   const [page, setPage] = useState(1);
@@ -114,11 +151,47 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
 
   const totalPages = Math.ceil(filtered.length / pageSize);
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const allFilteredIds = filtered.map((lead) => lead.id);
+  const allFilteredSelected = filtered.length > 0 && allFilteredIds.every((id) => selectedIds.includes(id));
+  const selectedLeads = filtered.filter((lead) => selectedIds.includes(lead.id));
+
+  function toggleLeadSelection(id: string, checked: boolean) {
+    setSelectedIds((current) =>
+      checked ? [...new Set([...current, id])] : current.filter((item) => item !== id),
+    );
+  }
+
+  function toggleAllFiltered(checked: boolean) {
+    setSelectedIds((current) => {
+      if (checked) {
+        return [...new Set([...current, ...allFilteredIds])];
+      }
+
+      return current.filter((id) => !allFilteredIds.includes(id));
+    });
+  }
 
   function handleStatusChange(id: string, status: string) {
     startTransition(async () => {
       await updateLeadStatus(id, status);
       router.refresh();
+    });
+  }
+
+  function handleExport() {
+    exportCSV(selectedLeads.length > 0 ? selectedLeads : filtered);
+  }
+
+  function handleBulkStatusChange() {
+    if (selectedIds.length === 0) return;
+
+    startTransition(async () => {
+      try {
+        await updateLeadStatuses(selectedIds, bulkStatus);
+        router.refresh();
+      } finally {
+        setSelectedIds([]);
+      }
     });
   }
 
@@ -207,12 +280,32 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
         </div>
 
         <div className="flex items-center gap-2">
+          {selectedIds.length > 0 ? (
+            <>
+              <select
+                value={bulkStatus}
+                onChange={(e) => setBulkStatus(e.target.value)}
+                className="h-10 rounded-xl border border-slate-200 bg-white px-4 py-2 pr-8 text-sm font-medium text-slate-700 outline-none focus:border-[#9B1D20] appearance-none"
+              >
+                {Object.entries(STATUS_LABELS).map(([value, { label }]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+              <button
+                onClick={handleBulkStatusChange}
+                disabled={isPending}
+                className="inline-flex h-10 items-center justify-center rounded-xl border border-[#9B1D20] bg-[#9B1D20] px-4 text-sm font-semibold text-white transition hover:bg-[#7d1619] disabled:opacity-50"
+              >
+                {isPending ? "Moviendo..." : `Mover ${selectedIds.length}`}
+              </button>
+            </>
+          ) : null}
           <button
-            onClick={() => exportCSV(filtered)}
+            onClick={handleExport}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
           >
             <Download className="h-4 w-4" />
-            Exportar
+            {selectedLeads.length > 0 ? `Exportar ${selectedLeads.length}` : "Exportar"}
           </button>
 
           <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleImport} />
@@ -241,7 +334,12 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
             <thead>
               <tr className="border-b border-slate-100 bg-white">
                 <th className="px-4 py-3 font-bold text-slate-800 w-12 text-center">
-                  <input type="checkbox" className="rounded border-slate-300" />
+                  <input
+                    type="checkbox"
+                    checked={allFilteredSelected}
+                    onChange={(e) => toggleAllFiltered(e.target.checked)}
+                    className="rounded border-slate-300"
+                  />
                 </th>
                 <th className="px-4 py-3 font-bold text-slate-800 min-w-[200px]">Nombre ↑↓</th>
                 <th className="px-4 py-3 font-bold text-slate-800">Teléfono</th>
@@ -284,7 +382,12 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                   return (
                     <tr key={lead.id} className="hover:bg-slate-50 transition-colors bg-white group">
                       <td className="px-4 py-4 text-center">
-                        <input type="checkbox" className="rounded border-slate-300" />
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(lead.id)}
+                          onChange={(e) => toggleLeadSelection(lead.id, e.target.checked)}
+                          className="rounded border-slate-300"
+                        />
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
@@ -298,7 +401,16 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <p className="text-sm font-medium text-slate-700">{lead.phone || <span className="text-slate-300">—</span>}</p>
+                        {lead.phone ? (
+                          <a
+                            href={`tel:${lead.phone}`}
+                            className="text-sm font-medium text-slate-700 underline decoration-slate-200 underline-offset-4 transition hover:text-[#9B1D20]"
+                          >
+                            {formatPhoneNumber(lead.phone)}
+                          </a>
+                        ) : (
+                          <span className="text-slate-300">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-4">
                         {lead.education_level ? (
@@ -336,7 +448,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
         {/* Pagination Controls */}
         <div className="flex items-center justify-between border-t border-slate-100 bg-white px-4 py-3">
           <p className="text-xs font-medium text-slate-500">
-            0 de {filtered.length} fila(s) seleccionada(s).
+            {selectedLeads.length} de {filtered.length} fila(s) seleccionada(s).
           </p>
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-slate-500 mr-2">

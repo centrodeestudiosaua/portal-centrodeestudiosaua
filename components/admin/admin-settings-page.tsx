@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Globe, KeyRound, Mail, Shield, User2 } from "lucide-react";
+import { Globe, KeyRound, Mail, Shield, User2 } from "lucide-react";
 
 type AdminSettingsPageProps = {
   user: {
@@ -217,7 +217,7 @@ export function AdminSettingsPage({ user, adminUsers }: AdminSettingsPageProps) 
         </article>
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-2">
+      <section>
         <article className="rounded-[28px] border border-[#e8decf] bg-white p-6 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f4efe6] text-[#9B3328]">
@@ -245,28 +245,6 @@ export function AdminSettingsPage({ user, adminUsers }: AdminSettingsPageProps) 
               href="https://admin.centrodeestudiosaua.com/dashboard"
             />
           </div>
-        </article>
-
-        <article className="rounded-[28px] border border-[#e8decf] bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f4efe6] text-[#9B3328]">
-              <CheckCircle2 className="h-4.5 w-4.5" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">Qué debe llevar esta sección</h2>
-              <p className="text-sm text-slate-500">
-                Base operativa correcta para un cliente no técnico.
-              </p>
-            </div>
-          </div>
-
-          <ul className="mt-6 space-y-3 text-sm leading-7 text-slate-600">
-            <li>Cuenta administrativa actual y correo de acceso.</li>
-            <li>Cambio de contraseña por correo seguro.</li>
-            <li>Estado de confirmación del correo.</li>
-            <li>Dominios activos del ecosistema.</li>
-            <li>Más adelante: usuarios admin, roles y correos transaccionales.</li>
-          </ul>
         </article>
       </section>
 
